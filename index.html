@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with Lazy-Loaded Summary Accordions, Game Leader Ticker, and Visibility Polling).
-Project Context: TitanUp Scoreboard - V4.1
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Stats & Strict Accordion).
+Project Context: TitanUp Scoreboard - V4.2
 </script>
 
 <!DOCTYPE html>
@@ -97,9 +97,10 @@ Project Context: TitanUp Scoreboard - V4.1
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V4.1 Ticker & Clickable Area Styles */
+    /* V4.2 Ticker & Clickable Area Styles */
     .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .stat-line { font-size: 0.75rem; line-height: 1.3; color: #495057; margin-bottom: 4px; }
+    .stat-line { font-size: 0.72rem; line-height: 1.35; color: #495057; margin-bottom: 6px; }
+    .stat-secondary { opacity: 0.7; font-weight: normal; }
     
     .ticker-wrap { width: 100%; overflow: hidden; box-sizing: border-box; background-color: rgba(12,35,64,0.04); border-top: 1px solid rgba(12,35,64,0.08); padding: 5px 0; }
     .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 25s linear infinite; font-size: 0.65rem; font-weight: 700; color: #0C2340; letter-spacing: 0.5px; }
@@ -209,7 +210,7 @@ Project Context: TitanUp Scoreboard - V4.1
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.1
+      TitanUp Scoreboard &bull; V4.2
     </div>
   </main>
 
@@ -235,7 +236,7 @@ Project Context: TitanUp Scoreboard - V4.1
         spoilerExpirationHour: localStorage.getItem('titan_spoiler_hour') !== null ? parseInt(localStorage.getItem('titan_spoiler_hour')) : 3,
         isFetching: false,
         cachedData: null,
-        openAccordions: [] // Array of Game IDs currently expanded
+        openAccordions: [] // V4.2 Now strictly capped at 1 Game ID
       };
 
       var dom = {
@@ -288,7 +289,6 @@ Project Context: TitanUp Scoreboard - V4.1
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
 
-        // V4.1 Visibility API Hook - Prevents background queuing/connection errors
         document.addEventListener('visibilitychange', function() {
           if (document.visibilityState === 'visible') {
             if (!state.isFetching) fetchScoreboardData();
@@ -298,13 +298,21 @@ Project Context: TitanUp Scoreboard - V4.1
           }
         });
 
+        // V4.2 Strict Accordion Lock - Close others before opening new
         document.addEventListener('show.bs.collapse', function (e) {
           if (e.target.id && e.target.id.startsWith('stats-')) {
             var gameId = e.target.id.replace('stats-', '');
-            if (!state.openAccordions.includes(gameId)) {
-               state.openAccordions.push(gameId);
-               fetchGameSummary(gameId);
-            }
+            
+            var openPanels = document.querySelectorAll('.collapse.show');
+            openPanels.forEach(function(panel) {
+              if (panel.id !== e.target.id && panel.id.startsWith('stats-')) {
+                var bsCollapse = bootstrap.Collapse.getInstance(panel);
+                if (bsCollapse) bsCollapse.hide();
+              }
+            });
+
+            state.openAccordions = [gameId];
+            fetchGameSummary(gameId);
           }
         });
 
@@ -402,7 +410,7 @@ Project Context: TitanUp Scoreboard - V4.1
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
           awayTeam: extractTeamDetails(away),
-          gameLeaders: comp.leaders || [] // V4.1 Restored for the ticker
+          gameLeaders: comp.leaders || []
         };
       }
 
@@ -525,14 +533,15 @@ Project Context: TitanUp Scoreboard - V4.1
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.1 Lazy Loaded Summary & Scrolling Ticker ---
+      // --- V4.2 Deep Stats Loading ---
       
       function buildTickerHtml(game) {
         if (game.state === 'pre') return ''; 
 
-        var pass = extractCategoryStringSummary(game.gameLeaders, 'passing', false);
-        var rush = extractCategoryStringSummary(game.gameLeaders, 'rushing', false);
-        var rec = extractCategoryStringSummary(game.gameLeaders, 'receiving', false);
+        // Restrict ticker to 1 player per category
+        var pass = extractCategoryStringSummary(game.gameLeaders, 'passing', false, 1);
+        var rush = extractCategoryStringSummary(game.gameLeaders, 'rushing', false, 1);
+        var rec = extractCategoryStringSummary(game.gameLeaders, 'receiving', false, 1);
         
         if (!pass && !rush && !rec) return '';
 
@@ -597,9 +606,10 @@ Project Context: TitanUp Scoreboard - V4.1
       }
 
       function buildTeamLeadersHtml(teamData) {
-        var pass = extractCategoryStringSummary(teamData.leaders, 'passing', true);
-        var rush = extractCategoryStringSummary(teamData.leaders, 'rushing', true);
-        var rec = extractCategoryStringSummary(teamData.leaders, 'receiving', true);
+        // V4.2 Extract up to top 3 players per category for the expanded panel
+        var pass = extractCategoryStringSummary(teamData.leaders, 'passing', true, 3);
+        var rush = extractCategoryStringSummary(teamData.leaders, 'rushing', true, 3);
+        var rec = extractCategoryStringSummary(teamData.leaders, 'receiving', true, 3);
 
         if (!pass && !rush && !rec) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
 
@@ -611,8 +621,9 @@ Project Context: TitanUp Scoreboard - V4.1
         return html;
       }
 
-      function extractCategoryStringSummary(leadersArray, categoryName, isHtml) {
+      function extractCategoryStringSummary(leadersArray, categoryName, isHtml, limit) {
         if (isHtml === undefined) isHtml = true;
+        if (limit === undefined) limit = 3;
         if (!leadersArray || !leadersArray.length) return null;
         
         var category = leadersArray.find(function(cat) { 
@@ -620,12 +631,24 @@ Project Context: TitanUp Scoreboard - V4.1
         });
         
         if (category && category.leaders && category.leaders.length > 0) {
-          var athlete = category.leaders[0].athlete || {};
-          var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
-          var statValue = category.leaders[0].displayValue || '0';
+          var players = [];
+          var loopLimit = Math.min(category.leaders.length, limit);
           
-          if (isHtml) return '<strong>' + athleteName + '</strong> (' + statValue + ')';
-          return athleteName + ' (' + statValue + ')';
+          for (var i = 0; i < loopLimit; i++) {
+            var athlete = category.leaders[i].athlete || {};
+            var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
+            var statValue = category.leaders[i].displayValue || '0';
+            
+            if (isHtml) {
+              if (i === 0) players.push('<strong>' + athleteName + '</strong> (' + statValue + ')');
+              else players.push('<span class="stat-secondary">' + athleteName + ' (' + statValue + ')</span>');
+            } else {
+              players.push(athleteName + ' (' + statValue + ')');
+            }
+          }
+          
+          if (isHtml) return players.join(' &bull; ');
+          return players.join(' • ');
         }
         return null;
       }
