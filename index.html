@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with AFC South Highlights & Stat Accordions).
-Project Context: TitanUp Scoreboard - V3.1
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with AFC South Highlights & Game Leaders Accordion).
+Project Context: TitanUp Scoreboard - V3.2
 </script>
 
 <!DOCTYPE html>
@@ -97,12 +97,12 @@ Project Context: TitanUp Scoreboard - V3.1
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V3.0/3.1 Stat Toggle Styling */
+    /* V3.2 Stat Toggle Styling */
     .stat-toggle { cursor: pointer; border-top: 1px dashed rgba(12,35,64,0.15); transition: opacity 0.2s; user-select: none; }
     .stat-toggle:hover { opacity: 0.7; }
     .stat-toggle[aria-expanded="true"] .transition-chevron { transform: rotate(180deg); display: inline-block; }
     .transition-chevron { transition: transform 0.3s ease; display: inline-block; }
-    .stat-line { font-size: 0.68rem; line-height: 1.2; color: #495057; margin-bottom: 4px; }
+    .stat-line { font-size: 0.75rem; line-height: 1.3; color: #495057; margin-bottom: 4px; }
     
     .fab-refresh { position: fixed; bottom: 24px; right: 24px; background-color: #C8102E; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: transform 0.2s; }
     .fab-refresh:active { transform: scale(0.9); }
@@ -212,7 +212,7 @@ Project Context: TitanUp Scoreboard - V3.1
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V3.1
+      TitanUp Scoreboard &bull; V3.2
     </div>
   </main>
 
@@ -374,7 +374,8 @@ Project Context: TitanUp Scoreboard - V3.1
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
-          awayTeam: extractTeamDetails(away)
+          awayTeam: extractTeamDetails(away),
+          gameLeaders: comp.leaders || [] // V3.2 Fix: Shift extraction to game-level
         };
       }
 
@@ -385,8 +386,7 @@ Project Context: TitanUp Scoreboard - V3.1
           name: team.shortDisplayName || team.displayName || 'TBD',
           logo: team.logo || '',
           score: competitor.score || '0',
-          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : '',
-          leaders: competitor.leaders || []
+          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : ''
         };
       }
 
@@ -499,10 +499,9 @@ Project Context: TitanUp Scoreboard - V3.1
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V3.1 Stat Builder Functions (Updated Extraction Logic) ---
+      // --- V3.2 Stat Builder Functions (Consolidated Game Leaders) ---
       
       function buildStatToggleHtml(game) {
-        // Do not show accordion if game hasn't started yet
         if (game.state === 'pre') return ''; 
         
         return '<div class="text-center mt-3 pt-2 stat-toggle" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '" aria-expanded="false">' +
@@ -513,39 +512,32 @@ Project Context: TitanUp Scoreboard - V3.1
       function buildStatCollapseHtml(game) {
         if (game.state === 'pre') return ''; 
         
+        var pass = extractCategoryString(game.gameLeaders, 'passing');
+        var rush = extractCategoryString(game.gameLeaders, 'rushing');
+        var rec = extractCategoryString(game.gameLeaders, 'receiving');
+        
+        var content = '';
+        if (!pass && !rush && !rec) {
+          content = '<div style="font-size: 0.65rem; color: #6c757d;">Game leaders not yet available.</div>';
+        } else {
+          content = '<div class="d-flex flex-column">';
+          if (pass) content += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">PASS:</span> ' + pass + '</div>';
+          if (rush) content += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">RUSH:</span> ' + rush + '</div>';
+          if (rec)  content += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">REC:</span> ' + rec + '</div>';
+          content += '</div>';
+        }
+
         return '<div class="collapse mt-2 pt-2 border-top" id="stats-' + game.id + '" style="border-color: rgba(12,35,64,0.1) !important;">' +
-                 '<div class="row text-start g-2">' +
-                   '<div class="col-6">' +
-                     '<div class="fw-bold mb-1 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + game.awayTeam.name + '</div>' +
-                     buildTeamLeadersHtml(game.awayTeam) +
-                   '</div>' +
-                   '<div class="col-6 border-start" style="border-color: rgba(12,35,64,0.1) !important;">' +
-                     '<div class="fw-bold mb-1 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + game.homeTeam.name + '</div>' +
-                     buildTeamLeadersHtml(game.homeTeam) +
-                   '</div>' +
+                 '<div class="text-start">' +
+                   '<div class="fw-bold mb-1 text-uppercase" style="font-size: 0.7rem; color: #C8102E;">Overall Game Leaders</div>' +
+                   content +
                  '</div>' +
                '</div>';
-      }
-
-      function buildTeamLeadersHtml(team) {
-        var pass = extractCategoryString(team.leaders, 'passing');
-        var rush = extractCategoryString(team.leaders, 'rushing');
-        var rec = extractCategoryString(team.leaders, 'receiving');
-        
-        if (!pass && !rush && !rec) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
-
-        var html = '<div class="d-flex flex-column">';
-        if (pass) html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">PASS:</span> ' + pass + '</div>';
-        if (rush) html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">RUSH:</span> ' + rush + '</div>';
-        if (rec)  html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">REC:</span> ' + rec + '</div>';
-        html += '</div>';
-        return html;
       }
 
       function extractCategoryString(leadersArray, categoryName) {
         if (!leadersArray || !leadersArray.length) return null;
         
-        // V3.1 Fix: Use includes() to catch NFL's "passingYards" vs CFB's "passing"
         var category = leadersArray.find(function(cat) { 
           return cat.name && cat.name.toLowerCase().includes(categoryName.toLowerCase()); 
         });
