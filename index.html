@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme).
-Project Context: TitanUp Scoreboard - V1.0
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion).
+Project Context: TitanUp Scoreboard - V1.1
 </script>
 
 <!DOCTYPE html>
@@ -37,7 +37,7 @@ Project Context: TitanUp Scoreboard - V1.0
         short_name: "TitanUp",
         start_url: window.location.href,
         display: "standalone",
-        background_color: "#071526",
+        background_color: "#4994ce",
         theme_color: "#0C2340",
         icons: [
           { src: iconUrl, sizes: "192x192", type: "image/png", purpose: "any maskable" },
@@ -62,35 +62,39 @@ Project Context: TitanUp Scoreboard - V1.0
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
   <style>
-    body { background-color: #071526; color: white; font-family: 'Archivo', sans-serif; }
-    .navbar-titans { background-color: #0C2340; border-bottom: 2px solid #4B92DB; }
+    body { background-color: #4994ce; color: #0C2340; font-family: 'Archivo', sans-serif; }
+    .navbar-titans { background-color: #0C2340; border-bottom: 3px solid #C8102E; }
     
     /* Responsive Header Scaling */
     .nav-logo { width: 40px; height: 40px; }
-    .nav-title { font-weight: 900; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; }
+    .nav-title { font-weight: 900; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; color: #ffffff; }
     
     @media (min-width: 576px) {
       .nav-logo { width: 54px; height: 54px; }
       .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
     }
 
-    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
-    .game-card-titans { border: 2px solid #4B92DB; box-shadow: 0 4px 15px rgba(75, 146, 219, 0.2); }
-    .game-card-primetime { border: 1px solid #C8102E; }
-    .titans-badge-strip { background-color: #4B92DB; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
+    .game-card { background-color: #ffffff; border-radius: 8px; border: 1px solid rgba(12,35,64,0.1); margin-bottom: 12px; color: #0C2340; }
+    .game-card-titans { border: 2px solid #0C2340; box-shadow: 0 4px 15px rgba(12, 35, 64, 0.2); }
+    .game-card-primetime { border: 2px solid #C8102E; }
+    .titans-badge-strip { background-color: #0C2340; color: #ffffff; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
+    
     .team-logo { width: 36px; height: 36px; object-fit: contain; }
-    .team-name { font-weight: 700; font-size: 1rem; }
-    .team-record { font-size: 0.7rem; color: #adb5bd; }
-    .team-score { font-size: 1.5rem; font-weight: 900; }
+    .team-name { font-weight: 700; font-size: 1rem; color: #0C2340; }
+    .team-record { font-size: 0.7rem; color: #6c757d; }
+    .team-score { font-size: 1.5rem; font-weight: 900; color: #0C2340; }
+    
     .status-badge { font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 4px; }
     .status-live { background-color: #C8102E; color: white; }
-    .status-final { background-color: #495057; color: white; }
-    .status-scheduled { background-color: transparent; border: 1px solid #6c757d; color: #ced4da; }
+    .status-final { background-color: #e9ecef; color: #495057; }
+    .status-scheduled { background-color: transparent; border: 1px solid #adb5bd; color: #6c757d; }
+    
     .spoiler-container { position: relative; }
     .spoiler-blur { filter: blur(12px); pointer-events: none; user-select: none; opacity: 0.6; }
     .spoiler-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
+    
     .fab-refresh { position: fixed; bottom: 24px; right: 24px; background-color: #C8102E; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: transform 0.2s; }
     .fab-refresh:active { transform: scale(0.9); }
     .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
@@ -98,10 +102,10 @@ Project Context: TitanUp Scoreboard - V1.0
     
     /* Toggle Switch Styling Tweaks */
     .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
-    .form-switch .form-check-input:checked { background-color: #4B92DB; border-color: #4B92DB; }
+    .form-switch .form-check-input:checked { background-color: #4994ce; border-color: #4994ce; }
     
     /* Offcanvas dark mode overrides */
-    .offcanvas { background-color: #071526 !important; border-left: 1px solid rgba(255,255,255,0.1); }
+    .offcanvas { background-color: #0C2340 !important; border-left: 1px solid rgba(255,255,255,0.1); }
   </style>
 </head>
 <body>
@@ -111,7 +115,7 @@ Project Context: TitanUp Scoreboard - V1.0
       <div class="d-flex align-items-center gap-2 gap-sm-3">
         <img src="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png" alt="TitanUp Logo" class="nav-logo">
         <div class="d-flex flex-column justify-content-center">
-          <h1 class="mb-0 text-white text-uppercase nav-title">TITAN UP</h1>
+          <h1 class="mb-0 text-uppercase nav-title">TITAN UP</h1>
           <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; line-height: 1;">Loading NFL Slate...</small>
         </div>
       </div>
@@ -187,19 +191,19 @@ Project Context: TitanUp Scoreboard - V1.0
     <section id="titansSection" class="mb-3"></section>
     
     <div class="d-flex justify-content-between align-items-center px-1 mb-2">
-      <span class="text-uppercase fw-bold text-muted" style="font-size: 0.75rem; letter-spacing: 0.08em;">NFL Slate</span>
-      <span class="text-muted" style="font-size: 0.7rem;" id="lastUpdatedLabel"></span>
+      <span class="text-uppercase fw-bold" style="color: #0C2340; font-size: 0.75rem; letter-spacing: 0.08em;">NFL Slate</span>
+      <span style="color: rgba(12,35,64,0.7); font-size: 0.7rem;" id="lastUpdatedLabel"></span>
     </div>
 
     <section id="nflGamesList" class="d-flex flex-column gap-2">
-      <div class="text-center py-5 text-muted">
-        <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
-        <div>Loading NFL matchups...</div>
+      <div class="text-center py-5" style="color: #0C2340;">
+        <div class="spinner-border spinner-border-sm mb-2"></div>
+        <div class="fw-bold">Loading NFL matchups...</div>
       </div>
     </section>
 
-    <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V1.0
+    <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
+      TitanUp Scoreboard &bull; V1.1
     </div>
   </main>
 
@@ -315,7 +319,7 @@ Project Context: TitanUp Scoreboard - V1.0
         var events = data.events || [];
         if (!events.length) {
           dom.titansSection.innerHTML = '';
-          dom.nflGamesList.innerHTML = '<div class="text-center py-5 text-muted">No games scheduled.</div>';
+          dom.nflGamesList.innerHTML = '<div class="text-center py-5" style="color: #0C2340;">No games scheduled.</div>';
           return;
         }
 
@@ -389,7 +393,7 @@ Project Context: TitanUp Scoreboard - V1.0
 
       function renderTitansGame(game) {
         if (!game) {
-          dom.titansSection.innerHTML = '<div class="game-card p-3 text-center"><div class="fw-bold text-white fs-5">Open Week / Bye</div></div>';
+          dom.titansSection.innerHTML = '<div class="game-card p-3 text-center"><div class="fw-bold fs-5">Open Week / Bye</div></div>';
           return;
         }
 
@@ -411,7 +415,7 @@ Project Context: TitanUp Scoreboard - V1.0
           '<div class="game-card game-card-titans">' +
             '<div class="titans-badge-strip">Titans Matchup</div>' +
             '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
-              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-white"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
+              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2" style="color: #0C2340;"></i><div class="fw-bold mb-1" style="color: #0C2340;">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
               '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
             '</div>' +
           '</div>';
@@ -446,7 +450,7 @@ Project Context: TitanUp Scoreboard - V1.0
           var highlightClass = isPrimetime ? 'game-card-primetime' : '';
           
           return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, isPrimetime, false) + buildScoreRowHtml(game) + '</div>';
-        }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
+        }).join('') : '<div class="text-center py-4" style="color: #0C2340;">No conference games.</div>';
       }
 
       function buildGameHeaderHtml(game, isPrimetime, isTitansGame) {
@@ -455,7 +459,7 @@ Project Context: TitanUp Scoreboard - V1.0
         
         var primetimeBadge = isPrimetime ? '<span class="badge bg-danger text-white fw-bold" style="font-size: 0.65rem;">PRIMETIME</span>' : '';
         
-        return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + primetimeBadge + '</div>';
+        return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary text-white" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + primetimeBadge + '</div>';
       }
 
       function buildScoreRowHtml(game) {
@@ -463,7 +467,7 @@ Project Context: TitanUp Scoreboard - V1.0
       }
 
       function buildTeamRowHtml(team, isScheduled) {
-        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name text-white">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
       function formatKickoffTime(dateString) {
