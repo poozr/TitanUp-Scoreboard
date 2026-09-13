@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with AFC South Highlights & Game Leaders Accordion).
-Project Context: TitanUp Scoreboard - V3.2
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with Lazy-Loaded Summary Accordions).
+Project Context: TitanUp Scoreboard - V4.0
 </script>
 
 <!DOCTYPE html>
@@ -97,7 +97,7 @@ Project Context: TitanUp Scoreboard - V3.2
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V3.2 Stat Toggle Styling */
+    /* V4.0 Stat Toggle Styling */
     .stat-toggle { cursor: pointer; border-top: 1px dashed rgba(12,35,64,0.15); transition: opacity 0.2s; user-select: none; }
     .stat-toggle:hover { opacity: 0.7; }
     .stat-toggle[aria-expanded="true"] .transition-chevron { transform: rotate(180deg); display: inline-block; }
@@ -212,7 +212,7 @@ Project Context: TitanUp Scoreboard - V3.2
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V3.2
+      TitanUp Scoreboard &bull; V4.0
     </div>
   </main>
 
@@ -227,8 +227,9 @@ Project Context: TitanUp Scoreboard - V3.2
     (function () {
       'use strict';
       var state = {
-        titansId: '10', // ESPN NFL ID for Tennessee Titans
-        baseUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+        titansId: '10', 
+        scoreboardUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+        summaryBaseUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=',
         pollingInterval: 45000,
         pollTimer: null,
         selectedWeek: 'current',
@@ -236,7 +237,8 @@ Project Context: TitanUp Scoreboard - V3.2
         liveFirst: localStorage.getItem('titan_live_first') === 'true',
         spoilerExpirationHour: localStorage.getItem('titan_spoiler_hour') !== null ? parseInt(localStorage.getItem('titan_spoiler_hour')) : 3,
         isFetching: false,
-        cachedData: null
+        cachedData: null,
+        openAccordions: [] // Array of Game IDs currently expanded
       };
 
       var dom = {
@@ -262,6 +264,7 @@ Project Context: TitanUp Scoreboard - V3.2
       function setupEventListeners() {
         dom.weekSelector.addEventListener('change', function (e) {
           state.selectedWeek = e.target.value;
+          state.openAccordions = []; // Reset on week change
           fetchScoreboardData();
           
           var offcanvasEl = document.getElementById('settingsDrawer');
@@ -274,17 +277,13 @@ Project Context: TitanUp Scoreboard - V3.2
         dom.sortFinishedToggle.addEventListener('change', function(e) {
           state.liveFirst = e.target.checked;
           localStorage.setItem('titan_live_first', state.liveFirst);
-          if (state.cachedData) {
-            processAndRender(state.cachedData);
-          }
+          if (state.cachedData) processAndRender(state.cachedData);
         });
 
         dom.spoilerExpirationSelector.addEventListener('change', function(e) {
           state.spoilerExpirationHour = parseInt(e.target.value);
           localStorage.setItem('titan_spoiler_hour', state.spoilerExpirationHour);
-          if (state.cachedData) {
-            processAndRender(state.cachedData);
-          }
+          if (state.cachedData) processAndRender(state.cachedData);
         });
 
         dom.btnRefresh.addEventListener('click', function () {
@@ -293,18 +292,39 @@ Project Context: TitanUp Scoreboard - V3.2
           icon.classList.add('spinning');
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
+
+        // V4.0 Bootstrap Collapse Hooks for Lazy Loading
+        document.addEventListener('show.bs.collapse', function (e) {
+          if (e.target.id && e.target.id.startsWith('stats-')) {
+            var gameId = e.target.id.replace('stats-', '');
+            if (!state.openAccordions.includes(gameId)) {
+               state.openAccordions.push(gameId);
+               fetchGameSummary(gameId);
+            }
+          }
+        });
+
+        document.addEventListener('hide.bs.collapse', function (e) {
+          if (e.target.id && e.target.id.startsWith('stats-')) {
+            var gameId = e.target.id.replace('stats-', '');
+            state.openAccordions = state.openAccordions.filter(id => id !== gameId);
+          }
+        });
       }
 
       function startPolling() {
         if (state.pollTimer) clearInterval(state.pollTimer);
         state.pollTimer = setInterval(function () {
-          if (state.selectedWeek === 'current') fetchScoreboardData();
+          if (state.selectedWeek === 'current') {
+             fetchScoreboardData();
+             // The rehydration of open accordions is handled inside processAndRender
+          }
         }, state.pollingInterval);
       }
 
       function fetchScoreboardData(callback) {
         state.isFetching = true;
-        var url = state.baseUrl;
+        var url = state.scoreboardUrl;
         if (state.selectedWeek !== 'current') url += '?week=' + state.selectedWeek;
 
         fetch(url)
@@ -359,6 +379,11 @@ Project Context: TitanUp Scoreboard - V3.2
 
         renderTitansGame(titansGame);
         renderOtherGames(otherGames);
+
+        // V4.0 Rehydrate API fetches for any accordions that were kept open across the DOM wipe
+        state.openAccordions.forEach(function(gameId) {
+          fetchGameSummary(gameId);
+        });
       }
 
       function normalizeGameData(event) {
@@ -374,8 +399,7 @@ Project Context: TitanUp Scoreboard - V3.2
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
-          awayTeam: extractTeamDetails(away),
-          gameLeaders: comp.leaders || [] // V3.2 Fix: Shift extraction to game-level
+          awayTeam: extractTeamDetails(away)
         };
       }
 
@@ -461,11 +485,9 @@ Project Context: TitanUp Scoreboard - V3.2
       function renderOtherGames(games) {
         dom.nflGamesList.innerHTML = games.length ? games.map(function(game) {
           
-          // Primetime Logic parsing
           var tv = (game.tvStation || '').toUpperCase();
           var isPrimetime = tv.includes('PRIME') || tv.includes('NBC') || tv.includes('ESPN') || tv.includes('ABC') || tv.includes('PEACOCK') || tv.includes('NETFLIX');
           
-          // AFC South Divisional Logic (Colts: 11, Jaguars: 30, Texans: 34)
           var afcSouthIds = ['11', '30', '34'];
           var isAfcSouth = afcSouthIds.includes(game.homeTeam.id) || afcSouthIds.includes(game.awayTeam.id);
           
@@ -499,43 +521,85 @@ Project Context: TitanUp Scoreboard - V3.2
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V3.2 Stat Builder Functions (Consolidated Game Leaders) ---
+      // --- V4.0 Lazy Loaded Architecture ---
       
       function buildStatToggleHtml(game) {
         if (game.state === 'pre') return ''; 
+        var isOpen = state.openAccordions.includes(game.id);
         
-        return '<div class="text-center mt-3 pt-2 stat-toggle" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '" aria-expanded="false">' +
+        return '<div class="text-center mt-3 pt-2 stat-toggle" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '" aria-expanded="' + (isOpen ? 'true' : 'false') + '">' +
                '<span style="font-size: 0.65rem; text-transform: uppercase; font-weight: 900; color: rgba(12,35,64,0.6);">' +
                'Top Performers <i class="bi bi-chevron-down ms-1 transition-chevron"></i></span></div>';
       }
 
       function buildStatCollapseHtml(game) {
         if (game.state === 'pre') return ''; 
+        var isOpen = state.openAccordions.includes(game.id);
+        var showClass = isOpen ? 'show' : '';
         
-        var pass = extractCategoryString(game.gameLeaders, 'passing');
-        var rush = extractCategoryString(game.gameLeaders, 'rushing');
-        var rec = extractCategoryString(game.gameLeaders, 'receiving');
-        
-        var content = '';
-        if (!pass && !rush && !rec) {
-          content = '<div style="font-size: 0.65rem; color: #6c757d;">Game leaders not yet available.</div>';
-        } else {
-          content = '<div class="d-flex flex-column">';
-          if (pass) content += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">PASS:</span> ' + pass + '</div>';
-          if (rush) content += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">RUSH:</span> ' + rush + '</div>';
-          if (rec)  content += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">REC:</span> ' + rec + '</div>';
-          content += '</div>';
-        }
-
-        return '<div class="collapse mt-2 pt-2 border-top" id="stats-' + game.id + '" style="border-color: rgba(12,35,64,0.1) !important;">' +
-                 '<div class="text-start">' +
-                   '<div class="fw-bold mb-1 text-uppercase" style="font-size: 0.7rem; color: #C8102E;">Overall Game Leaders</div>' +
-                   content +
+        return '<div class="collapse mt-2 pt-2 border-top ' + showClass + '" id="stats-' + game.id + '" style="border-color: rgba(12,35,64,0.1) !important;">' +
+                 '<div id="summary-content-' + game.id + '">' +
+                   (isOpen ? '<div class="text-center py-2"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>' : '') +
                  '</div>' +
                '</div>';
       }
 
-      function extractCategoryString(leadersArray, categoryName) {
+      function fetchGameSummary(gameId) {
+        var container = document.getElementById('summary-content-' + gameId);
+        if (container && container.innerHTML.trim() === '') {
+            container.innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        }
+
+        fetch(state.summaryBaseUrl + gameId)
+            .then(res => res.json())
+            .then(data => {
+                var contentDiv = document.getElementById('summary-content-' + gameId);
+                if (!contentDiv) return;
+
+                var leaders = data.leaders || [];
+                if (leaders.length < 2) {
+                    contentDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Detailed stats not yet available.</div>';
+                    return;
+                }
+
+                // API typically puts Away at [0] and Home at [1]
+                var team1 = leaders[0];
+                var team2 = leaders[1];
+
+                var html = '<div class="row text-start g-2">' +
+                             '<div class="col-6">' +
+                               '<div class="fw-bold mb-1 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + (team1.team.displayName || team1.team.name || 'AWAY') + '</div>' +
+                               buildTeamLeadersHtml(team1) +
+                             '</div>' +
+                             '<div class="col-6 border-start" style="border-color: rgba(12,35,64,0.1) !important;">' +
+                               '<div class="fw-bold mb-1 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + (team2.team.displayName || team2.team.name || 'HOME') + '</div>' +
+                               buildTeamLeadersHtml(team2) +
+                             '</div>' +
+                           '</div>';
+                contentDiv.innerHTML = html;
+            })
+            .catch(err => {
+                var errDiv = document.getElementById('summary-content-' + gameId);
+                if(errDiv) errDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Failed to load stats.</div>';
+            });
+      }
+
+      function buildTeamLeadersHtml(teamData) {
+        var pass = extractCategoryStringSummary(teamData.leaders, 'passing');
+        var rush = extractCategoryStringSummary(teamData.leaders, 'rushing');
+        var rec = extractCategoryStringSummary(teamData.leaders, 'receiving');
+
+        if (!pass && !rush && !rec) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
+
+        var html = '<div class="d-flex flex-column">';
+        if (pass) html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">PASS:</span> ' + pass + '</div>';
+        if (rush) html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">RUSH:</span> ' + rush + '</div>';
+        if (rec)  html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">REC:</span> ' + rec + '</div>';
+        html += '</div>';
+        return html;
+      }
+
+      function extractCategoryStringSummary(leadersArray, categoryName) {
         if (!leadersArray || !leadersArray.length) return null;
         
         var category = leadersArray.find(function(cat) { 
