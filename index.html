@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion).
-Project Context: TitanUp Scoreboard - V1.1
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with AFC South Highlights).
+Project Context: TitanUp Scoreboard - V2.1
 </script>
 
 <!DOCTYPE html>
@@ -77,6 +77,8 @@ Project Context: TitanUp Scoreboard - V1.1
     .game-card { background-color: #ffffff; border-radius: 8px; border: 1px solid rgba(12,35,64,0.1); margin-bottom: 12px; color: #0C2340; }
     .game-card-titans { border: 2px solid #0C2340; box-shadow: 0 4px 15px rgba(12, 35, 64, 0.2); }
     .game-card-primetime { border: 2px solid #C8102E; }
+    .game-card-division { border-left: 4px solid #4B92DB; }
+    
     .titans-badge-strip { background-color: #0C2340; color: #ffffff; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
     
     .team-logo { width: 36px; height: 36px; object-fit: contain; }
@@ -203,7 +205,7 @@ Project Context: TitanUp Scoreboard - V1.1
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V1.1
+      TitanUp Scoreboard &bull; V2.1
     </div>
   </main>
 
@@ -443,13 +445,19 @@ Project Context: TitanUp Scoreboard - V1.1
       function renderOtherGames(games) {
         dom.nflGamesList.innerHTML = games.length ? games.map(function(game) {
           
-          // Primetime Logic parsing based on user constraints
+          // Primetime Logic parsing
           var tv = (game.tvStation || '').toUpperCase();
           var isPrimetime = tv.includes('PRIME') || tv.includes('NBC') || tv.includes('ESPN') || tv.includes('ABC') || tv.includes('PEACOCK') || tv.includes('NETFLIX');
           
-          var highlightClass = isPrimetime ? 'game-card-primetime' : '';
+          // AFC South Divisional Logic (Colts: 11, Jaguars: 30, Texans: 34)
+          var afcSouthIds = ['11', '30', '34'];
+          var isAfcSouth = afcSouthIds.includes(game.homeTeam.id) || afcSouthIds.includes(game.awayTeam.id);
           
-          return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, isPrimetime, false) + buildScoreRowHtml(game) + '</div>';
+          var highlightClass = '';
+          if (isPrimetime) highlightClass += 'game-card-primetime ';
+          if (isAfcSouth) highlightClass += 'game-card-division';
+          
+          return '<div class="game-card p-3 ' + highlightClass.trim() + '">' + buildGameHeaderHtml(game, isPrimetime, false) + buildScoreRowHtml(game) + '</div>';
         }).join('') : '<div class="text-center py-4" style="color: #0C2340;">No conference games.</div>';
       }
 
