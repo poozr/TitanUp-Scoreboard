@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with Lazy-Loaded Summary Accordions).
-Project Context: TitanUp Scoreboard - V4.0
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with Lazy-Loaded Summary Accordions, Game Leader Ticker, and Visibility Polling).
+Project Context: TitanUp Scoreboard - V4.1
 </script>
 
 <!DOCTYPE html>
@@ -74,12 +74,12 @@ Project Context: TitanUp Scoreboard - V4.0
       .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
     }
 
-    .game-card { background-color: #ffffff; border-radius: 8px; border: 1px solid rgba(12,35,64,0.1); margin-bottom: 12px; color: #0C2340; }
+    .game-card { background-color: #ffffff; border-radius: 8px; border: 1px solid rgba(12,35,64,0.1); margin-bottom: 12px; color: #0C2340; overflow: hidden; }
     .game-card-titans { border: 2px solid #0C2340; box-shadow: 0 4px 15px rgba(12, 35, 64, 0.2); }
     .game-card-primetime { border: 2px solid #C8102E; }
     .game-card-division { border-left: 8px solid #0C2340; }
     
-    .titans-badge-strip { background-color: #0C2340; color: #ffffff; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
+    .titans-badge-strip { background-color: #0C2340; color: #ffffff; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; letter-spacing: 1px; }
     
     .team-logo { width: 36px; height: 36px; object-fit: contain; }
     .team-name { font-weight: 700; font-size: 1rem; color: #0C2340; }
@@ -97,23 +97,23 @@ Project Context: TitanUp Scoreboard - V4.0
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V4.0 Stat Toggle Styling */
-    .stat-toggle { cursor: pointer; border-top: 1px dashed rgba(12,35,64,0.15); transition: opacity 0.2s; user-select: none; }
-    .stat-toggle:hover { opacity: 0.7; }
-    .stat-toggle[aria-expanded="true"] .transition-chevron { transform: rotate(180deg); display: inline-block; }
-    .transition-chevron { transition: transform 0.3s ease; display: inline-block; }
+    /* V4.1 Ticker & Clickable Area Styles */
+    .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .stat-line { font-size: 0.75rem; line-height: 1.3; color: #495057; margin-bottom: 4px; }
+    
+    .ticker-wrap { width: 100%; overflow: hidden; box-sizing: border-box; background-color: rgba(12,35,64,0.04); border-top: 1px solid rgba(12,35,64,0.08); padding: 5px 0; }
+    .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 25s linear infinite; font-size: 0.65rem; font-weight: 700; color: #0C2340; letter-spacing: 0.5px; }
+    @keyframes ticker {
+      0%   { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-100%, 0, 0); }
+    }
     
     .fab-refresh { position: fixed; bottom: 24px; right: 24px; background-color: #C8102E; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: transform 0.2s; }
     .fab-refresh:active { transform: scale(0.9); }
     .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
     
-    /* Toggle Switch Styling Tweaks */
     .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
     .form-switch .form-check-input:checked { background-color: #4994ce; border-color: #4994ce; }
-    
-    /* Offcanvas dark mode overrides */
     .offcanvas { background-color: #0C2340 !important; border-left: 1px solid rgba(255,255,255,0.1); }
   </style>
 </head>
@@ -144,7 +144,6 @@ Project Context: TitanUp Scoreboard - V4.0
     </div>
     <div class="offcanvas-body d-flex flex-column gap-4 mt-2">
       
-      <!-- Live First Toggle inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
         <div class="form-check form-switch d-flex align-items-center p-0">
@@ -154,7 +153,6 @@ Project Context: TitanUp Scoreboard - V4.0
         <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the slate to keep live action at the top.</small>
       </div>
 
-      <!-- Spoiler Shield Expiration Time inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
         <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
@@ -168,7 +166,6 @@ Project Context: TitanUp Scoreboard - V4.0
         <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">When should the app stop automatically hiding the Titans' final score?</small>
       </div>
 
-      <!-- Week Selector inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
@@ -212,7 +209,7 @@ Project Context: TitanUp Scoreboard - V4.0
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.0
+      TitanUp Scoreboard &bull; V4.1
     </div>
   </main>
 
@@ -264,14 +261,12 @@ Project Context: TitanUp Scoreboard - V4.0
       function setupEventListeners() {
         dom.weekSelector.addEventListener('change', function (e) {
           state.selectedWeek = e.target.value;
-          state.openAccordions = []; // Reset on week change
+          state.openAccordions = []; 
           fetchScoreboardData();
           
           var offcanvasEl = document.getElementById('settingsDrawer');
           var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
-          if(offcanvasInstance) {
-            offcanvasInstance.hide();
-          }
+          if(offcanvasInstance) offcanvasInstance.hide();
         });
         
         dom.sortFinishedToggle.addEventListener('change', function(e) {
@@ -293,7 +288,16 @@ Project Context: TitanUp Scoreboard - V4.0
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
 
-        // V4.0 Bootstrap Collapse Hooks for Lazy Loading
+        // V4.1 Visibility API Hook - Prevents background queuing/connection errors
+        document.addEventListener('visibilitychange', function() {
+          if (document.visibilityState === 'visible') {
+            if (!state.isFetching) fetchScoreboardData();
+            startPolling();
+          } else {
+            if (state.pollTimer) clearInterval(state.pollTimer);
+          }
+        });
+
         document.addEventListener('show.bs.collapse', function (e) {
           if (e.target.id && e.target.id.startsWith('stats-')) {
             var gameId = e.target.id.replace('stats-', '');
@@ -315,9 +319,8 @@ Project Context: TitanUp Scoreboard - V4.0
       function startPolling() {
         if (state.pollTimer) clearInterval(state.pollTimer);
         state.pollTimer = setInterval(function () {
-          if (state.selectedWeek === 'current') {
+          if (state.selectedWeek === 'current' && document.visibilityState === 'visible') {
              fetchScoreboardData();
-             // The rehydration of open accordions is handled inside processAndRender
           }
         }, state.pollingInterval);
       }
@@ -380,7 +383,6 @@ Project Context: TitanUp Scoreboard - V4.0
         renderTitansGame(titansGame);
         renderOtherGames(otherGames);
 
-        // V4.0 Rehydrate API fetches for any accordions that were kept open across the DOM wipe
         state.openAccordions.forEach(function(gameId) {
           fetchGameSummary(gameId);
         });
@@ -399,7 +401,8 @@ Project Context: TitanUp Scoreboard - V4.0
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
-          awayTeam: extractTeamDetails(away)
+          awayTeam: extractTeamDetails(away),
+          gameLeaders: comp.leaders || [] // V4.1 Restored for the ticker
         };
       }
 
@@ -451,13 +454,15 @@ Project Context: TitanUp Scoreboard - V4.0
         dom.titansSection.innerHTML = 
           '<div class="game-card game-card-titans">' +
             '<div class="titans-badge-strip">Titans Matchup</div>' +
-            '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
+            '<div class="position-relative ' + (needsShield ? 'spoiler-container' : '') + '">' +
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2" style="color: #0C2340;"></i><div class="fw-bold mb-1" style="color: #0C2340;">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> ' + buttonText + '</button></div>' : '') +
               '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + 
-                buildGameHeaderHtml(game, false, true) + 
-                buildScoreRowHtml(game) + 
-                buildStatToggleHtml(game) + 
-                buildStatCollapseHtml(game) + 
+                '<div class="p-3 card-clickable" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '">' +
+                  buildGameHeaderHtml(game, false, true) + 
+                  buildScoreRowHtml(game) + 
+                  buildStatCollapseHtml(game) + 
+                '</div>' +
+                buildTickerHtml(game) + 
               '</div>' +
             '</div>' +
           '</div>';
@@ -484,7 +489,6 @@ Project Context: TitanUp Scoreboard - V4.0
 
       function renderOtherGames(games) {
         dom.nflGamesList.innerHTML = games.length ? games.map(function(game) {
-          
           var tv = (game.tvStation || '').toUpperCase();
           var isPrimetime = tv.includes('PRIME') || tv.includes('NBC') || tv.includes('ESPN') || tv.includes('ABC') || tv.includes('PEACOCK') || tv.includes('NETFLIX');
           
@@ -495,11 +499,13 @@ Project Context: TitanUp Scoreboard - V4.0
           if (isPrimetime) highlightClass += 'game-card-primetime ';
           if (isAfcSouth) highlightClass += 'game-card-division';
           
-          return '<div class="game-card p-3 ' + highlightClass.trim() + '">' + 
-                   buildGameHeaderHtml(game, isPrimetime, false) + 
-                   buildScoreRowHtml(game) + 
-                   buildStatToggleHtml(game) + 
-                   buildStatCollapseHtml(game) + 
+          return '<div class="game-card ' + highlightClass.trim() + '">' + 
+                   '<div class="p-3 card-clickable" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '">' +
+                     buildGameHeaderHtml(game, isPrimetime, false) + 
+                     buildScoreRowHtml(game) + 
+                     buildStatCollapseHtml(game) + 
+                   '</div>' +
+                   buildTickerHtml(game) +
                  '</div>';
         }).join('') : '<div class="text-center py-4" style="color: #0C2340;">No conference games.</div>';
       }
@@ -507,9 +513,7 @@ Project Context: TitanUp Scoreboard - V4.0
       function buildGameHeaderHtml(game, isPrimetime, isTitansGame) {
         var timeLabel = game.state === 'pre' ? formatKickoffTime(game.date) : (game.statusDetail || 'LIVE');
         var badgeClass = game.state === 'in' ? 'status-live' : (game.state === 'post' ? 'status-final' : 'status-scheduled');
-        
         var primetimeBadge = isPrimetime ? '<span class="badge bg-danger text-white fw-bold" style="font-size: 0.65rem;">PRIMETIME</span>' : '';
-        
         return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary text-white" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + primetimeBadge + '</div>';
       }
 
@@ -521,15 +525,24 @@ Project Context: TitanUp Scoreboard - V4.0
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.0 Lazy Loaded Architecture ---
+      // --- V4.1 Lazy Loaded Summary & Scrolling Ticker ---
       
-      function buildStatToggleHtml(game) {
+      function buildTickerHtml(game) {
         if (game.state === 'pre') return ''; 
-        var isOpen = state.openAccordions.includes(game.id);
+
+        var pass = extractCategoryStringSummary(game.gameLeaders, 'passing', false);
+        var rush = extractCategoryStringSummary(game.gameLeaders, 'rushing', false);
+        var rec = extractCategoryStringSummary(game.gameLeaders, 'receiving', false);
         
-        return '<div class="text-center mt-3 pt-2 stat-toggle" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '" aria-expanded="' + (isOpen ? 'true' : 'false') + '">' +
-               '<span style="font-size: 0.65rem; text-transform: uppercase; font-weight: 900; color: rgba(12,35,64,0.6);">' +
-               'Top Performers <i class="bi bi-chevron-down ms-1 transition-chevron"></i></span></div>';
+        if (!pass && !rush && !rec) return '';
+
+        var parts = [];
+        if (pass) parts.push('PASS: ' + pass);
+        if (rush) parts.push('RUSH: ' + rush);
+        if (rec) parts.push('REC: ' + rec);
+        var fullText = 'TOP OVERALL PERFORMERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
+
+        return '<div class="ticker-wrap"><div class="ticker">' + fullText + '</div></div>';
       }
 
       function buildStatCollapseHtml(game) {
@@ -537,7 +550,7 @@ Project Context: TitanUp Scoreboard - V4.0
         var isOpen = state.openAccordions.includes(game.id);
         var showClass = isOpen ? 'show' : '';
         
-        return '<div class="collapse mt-2 pt-2 border-top ' + showClass + '" id="stats-' + game.id + '" style="border-color: rgba(12,35,64,0.1) !important;">' +
+        return '<div class="collapse mt-3 pt-3 border-top ' + showClass + '" id="stats-' + game.id + '" style="border-color: rgba(12,35,64,0.1) !important;">' +
                  '<div id="summary-content-' + game.id + '">' +
                    (isOpen ? '<div class="text-center py-2"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>' : '') +
                  '</div>' +
@@ -558,11 +571,10 @@ Project Context: TitanUp Scoreboard - V4.0
 
                 var leaders = data.leaders || [];
                 if (leaders.length < 2) {
-                    contentDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Detailed stats not yet available.</div>';
+                    contentDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Detailed team stats not yet available.</div>';
                     return;
                 }
 
-                // API typically puts Away at [0] and Home at [1]
                 var team1 = leaders[0];
                 var team2 = leaders[1];
 
@@ -585,9 +597,9 @@ Project Context: TitanUp Scoreboard - V4.0
       }
 
       function buildTeamLeadersHtml(teamData) {
-        var pass = extractCategoryStringSummary(teamData.leaders, 'passing');
-        var rush = extractCategoryStringSummary(teamData.leaders, 'rushing');
-        var rec = extractCategoryStringSummary(teamData.leaders, 'receiving');
+        var pass = extractCategoryStringSummary(teamData.leaders, 'passing', true);
+        var rush = extractCategoryStringSummary(teamData.leaders, 'rushing', true);
+        var rec = extractCategoryStringSummary(teamData.leaders, 'receiving', true);
 
         if (!pass && !rush && !rec) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
 
@@ -599,7 +611,8 @@ Project Context: TitanUp Scoreboard - V4.0
         return html;
       }
 
-      function extractCategoryStringSummary(leadersArray, categoryName) {
+      function extractCategoryStringSummary(leadersArray, categoryName, isHtml) {
+        if (isHtml === undefined) isHtml = true;
         if (!leadersArray || !leadersArray.length) return null;
         
         var category = leadersArray.find(function(cat) { 
@@ -610,7 +623,9 @@ Project Context: TitanUp Scoreboard - V4.0
           var athlete = category.leaders[0].athlete || {};
           var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
           var statValue = category.leaders[0].displayValue || '0';
-          return '<strong>' + athleteName + '</strong> (' + statValue + ')';
+          
+          if (isHtml) return '<strong>' + athleteName + '</strong> (' + statValue + ')';
+          return athleteName + ' (' + statValue + ')';
         }
         return null;
       }
