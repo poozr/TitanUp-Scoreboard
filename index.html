@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with AFC South Highlights & Stat Accordions).
-Project Context: TitanUp Scoreboard - V3.0
+Project Context: TitanUp Scoreboard - V3.1
 </script>
 
 <!DOCTYPE html>
@@ -97,7 +97,7 @@ Project Context: TitanUp Scoreboard - V3.0
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V3.0 Stat Toggle Styling */
+    /* V3.0/3.1 Stat Toggle Styling */
     .stat-toggle { cursor: pointer; border-top: 1px dashed rgba(12,35,64,0.15); transition: opacity 0.2s; user-select: none; }
     .stat-toggle:hover { opacity: 0.7; }
     .stat-toggle[aria-expanded="true"] .transition-chevron { transform: rotate(180deg); display: inline-block; }
@@ -212,7 +212,7 @@ Project Context: TitanUp Scoreboard - V3.0
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V3.0
+      TitanUp Scoreboard &bull; V3.1
     </div>
   </main>
 
@@ -499,7 +499,7 @@ Project Context: TitanUp Scoreboard - V3.0
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V3.0 Stat Builder Functions ---
+      // --- V3.1 Stat Builder Functions (Updated Extraction Logic) ---
       
       function buildStatToggleHtml(game) {
         // Do not show accordion if game hasn't started yet
@@ -544,10 +544,16 @@ Project Context: TitanUp Scoreboard - V3.0
 
       function extractCategoryString(leadersArray, categoryName) {
         if (!leadersArray || !leadersArray.length) return null;
-        var category = leadersArray.find(function(cat) { return cat.name === categoryName; });
+        
+        // V3.1 Fix: Use includes() to catch NFL's "passingYards" vs CFB's "passing"
+        var category = leadersArray.find(function(cat) { 
+          return cat.name && cat.name.toLowerCase().includes(categoryName.toLowerCase()); 
+        });
+        
         if (category && category.leaders && category.leaders.length > 0) {
-          var athleteName = category.leaders[0].athlete.shortName || category.leaders[0].athlete.lastName;
-          var statValue = category.leaders[0].displayValue;
+          var athlete = category.leaders[0].athlete || {};
+          var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
+          var statValue = category.leaders[0].displayValue || '0';
           return '<strong>' + athleteName + '</strong> (' + statValue + ')';
         }
         return null;
