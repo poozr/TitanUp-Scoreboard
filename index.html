@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore Stats, Team Box, Defense, & Strict Accordion).
-Project Context: TitanUp Scoreboard - V4.4
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore Stats, Team Box Fallback Arrays, Defense, & Strict Accordion).
+Project Context: TitanUp Scoreboard - V4.5
 </script>
 
 <!DOCTYPE html>
@@ -97,7 +97,7 @@ Project Context: TitanUp Scoreboard - V4.4
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V4.4 Clickable Area & Deep Stat Styles */
+    /* V4.5 Clickable Area & Deep Stat Styles */
     .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .stat-line { font-size: 0.72rem; line-height: 1.35; color: #495057; margin-bottom: 8px; }
     .stat-secondary { opacity: 0.65; font-weight: normal; }
@@ -130,14 +130,12 @@ Project Context: TitanUp Scoreboard - V4.4
         </div>
       </div>
 
-      <!-- Drawer Trigger Button -->
       <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
         <i class="bi bi-sliders fs-4"></i>
       </button>
     </div>
   </header>
 
-  <!-- Settings Offcanvas Drawer -->
   <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
     <div class="offcanvas-header border-bottom border-secondary">
       <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="letter-spacing: 1px;">SETTINGS</h5>
@@ -210,7 +208,7 @@ Project Context: TitanUp Scoreboard - V4.4
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.4
+      TitanUp Scoreboard &bull; V4.5
     </div>
   </main>
 
@@ -298,7 +296,6 @@ Project Context: TitanUp Scoreboard - V4.4
           }
         });
 
-        // Strict Accordion Lock
         document.addEventListener('show.bs.collapse', function (e) {
           if (e.target.id && e.target.id.startsWith('stats-')) {
             var gameId = e.target.id.replace('stats-', '');
@@ -533,7 +530,7 @@ Project Context: TitanUp Scoreboard - V4.4
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.4 Deep Stats with Boxscore & Team Stats ---
+      // --- V4.5 Deep Stats with Boxscore & Team Stats Array Fallbacks ---
       
       function buildTickerHtml(game) {
         if (game.state === 'pre') return ''; 
@@ -629,7 +626,7 @@ Project Context: TitanUp Scoreboard - V4.4
         var pass = extractCategoryFromBoxscore(teamBoxscore, 'passing', 3);
         var rush = extractCategoryFromBoxscore(teamBoxscore, 'rushing', 3);
         var rec = extractCategoryFromBoxscore(teamBoxscore, 'receiving', 3);
-        var def = extractCategoryFromBoxscore(teamBoxscore, 'defensive', 2); // Pull top 2 defensive players
+        var def = extractCategoryFromBoxscore(teamBoxscore, 'defensive', 2);
 
         if (!pass && !rush && !rec && !def) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
 
@@ -668,7 +665,6 @@ Project Context: TitanUp Scoreboard - V4.4
                 statString = stats[0] + ' REC, ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
             } else if (categoryName === 'defensive' && stats.length >= 4) {
                 statString = stats[0] + ' TKL';
-                // ESPN Defense structure typically: [0] TOT TKL, [3] SACKS
                 if (stats[3] && stats[3] !== '0' && stats[3] !== '0.0') statString += ', ' + stats[3] + ' SCK';
             } else {
                 statString = stats.join(', '); 
@@ -685,13 +681,23 @@ Project Context: TitanUp Scoreboard - V4.4
         return null;
       }
       
+      // V4.5 Bulletproof fallback search array for NFL/CFB schema shifts
+      function getTeamStatValue(statsArray, possibleNames) {
+        var stat = null;
+        for (var i = 0; i < possibleNames.length; i++) {
+            stat = statsArray.find(function(s) { return s.name === possibleNames[i]; });
+            if (stat) return stat.displayValue;
+        }
+        return '-';
+      }
+
       function buildTeamStatsHtml(statsArray) {
         if (!statsArray || statsArray.length === 0) return '';
         
-        var yds = getTeamStatValue(statsArray, 'totalOffensiveYards');
-        var to = getTeamStatValue(statsArray, 'turnovers');
-        var pen = getTeamStatValue(statsArray, 'penalties'); // Usually structured as "7-45" (count-yards)
-        var top = getTeamStatValue(statsArray, 'possessionTime');
+        var yds = getTeamStatValue(statsArray, ['totalYards', 'netYards', 'totalOffensiveYards']);
+        var to = getTeamStatValue(statsArray, ['turnovers']);
+        var pen = getTeamStatValue(statsArray, ['totalPenaltiesYards', 'penalties', 'penaltiesYards']); 
+        var top = getTeamStatValue(statsArray, ['possessionTime']);
         
         return '<div class="mt-2 pt-2 border-top" style="border-color: rgba(12,35,64,0.1) !important;">' +
                  '<div class="fw-bold mb-2" style="font-size: 0.65rem; color: #C8102E; letter-spacing: 0.5px;">TEAM STATS</div>' +
@@ -700,11 +706,6 @@ Project Context: TitanUp Scoreboard - V4.4
                  '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">PEN:</span> ' + pen + '</div>' +
                  '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">TOP:</span> ' + top + '</div>' +
                '</div>';
-      }
-      
-      function getTeamStatValue(statsArray, statName) {
-        var stat = statsArray.find(function(s) { return s.name === statName; });
-        return stat ? stat.displayValue : '-';
       }
 
       function formatKickoffTime(dateString) {
