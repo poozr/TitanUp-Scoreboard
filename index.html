@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore Stats & Strict Accordion).
-Project Context: TitanUp Scoreboard - V4.3
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore Stats, Team Box, Defense, & Strict Accordion).
+Project Context: TitanUp Scoreboard - V4.4
 </script>
 
 <!DOCTYPE html>
@@ -97,9 +97,9 @@ Project Context: TitanUp Scoreboard - V4.3
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V4.3 Ticker & Clickable Area Styles */
+    /* V4.4 Clickable Area & Deep Stat Styles */
     .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .stat-line { font-size: 0.72rem; line-height: 1.35; color: #495057; margin-bottom: 12px; }
+    .stat-line { font-size: 0.72rem; line-height: 1.35; color: #495057; margin-bottom: 8px; }
     .stat-secondary { opacity: 0.65; font-weight: normal; }
     
     .ticker-wrap { width: 100%; overflow: hidden; box-sizing: border-box; background-color: rgba(12,35,64,0.04); border-top: 1px solid rgba(12,35,64,0.08); padding: 5px 0; }
@@ -210,7 +210,7 @@ Project Context: TitanUp Scoreboard - V4.3
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.3
+      TitanUp Scoreboard &bull; V4.4
     </div>
   </main>
 
@@ -533,12 +533,11 @@ Project Context: TitanUp Scoreboard - V4.3
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.3 Boxscore Extraction for Deep Stats ---
+      // --- V4.4 Deep Stats with Boxscore & Team Stats ---
       
       function buildTickerHtml(game) {
         if (game.state === 'pre') return ''; 
 
-        // Uses the shallow scoreboard payload for top 1 overall
         var pass = extractCategoryStringTicker(game.gameLeaders, 'passing');
         var rush = extractCategoryStringTicker(game.gameLeaders, 'rushing');
         var rec = extractCategoryStringTicker(game.gameLeaders, 'receiving');
@@ -592,24 +591,30 @@ Project Context: TitanUp Scoreboard - V4.3
                 var contentDiv = document.getElementById('summary-content-' + gameId);
                 if (!contentDiv) return;
 
-                // V4.3 Switch to Boxscore array instead of Leaders array
                 var boxscorePlayers = (data.boxscore && data.boxscore.players) ? data.boxscore.players : [];
+                var boxscoreTeams = (data.boxscore && data.boxscore.teams) ? data.boxscore.teams : [];
+                
                 if (boxscorePlayers.length < 2) {
-                    contentDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Detailed team stats not yet available.</div>';
+                    contentDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Detailed stats not yet available.</div>';
                     return;
                 }
 
-                var team1 = boxscorePlayers[0];
-                var team2 = boxscorePlayers[1];
+                var team1Players = boxscorePlayers[0];
+                var team2Players = boxscorePlayers[1];
+                
+                var team1StatsArray = (boxscoreTeams.length > 0 && boxscoreTeams[0].statistics) ? boxscoreTeams[0].statistics : [];
+                var team2StatsArray = (boxscoreTeams.length > 1 && boxscoreTeams[1].statistics) ? boxscoreTeams[1].statistics : [];
 
                 var html = '<div class="row text-start g-2">' +
                              '<div class="col-6">' +
-                               '<div class="fw-bold mb-2 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + (team1.team.displayName || team1.team.name || 'AWAY') + '</div>' +
-                               buildTeamBoxscoreHtml(team1) +
+                               '<div class="fw-bold mb-2 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + (team1Players.team.displayName || team1Players.team.name || 'AWAY') + '</div>' +
+                               buildTeamBoxscoreHtml(team1Players) +
+                               buildTeamStatsHtml(team1StatsArray) +
                              '</div>' +
                              '<div class="col-6 border-start" style="border-color: rgba(12,35,64,0.1) !important;">' +
-                               '<div class="fw-bold mb-2 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + (team2.team.displayName || team2.team.name || 'HOME') + '</div>' +
-                               buildTeamBoxscoreHtml(team2) +
+                               '<div class="fw-bold mb-2 text-uppercase" style="font-size: 0.7rem; color: #0C2340;">' + (team2Players.team.displayName || team2Players.team.name || 'HOME') + '</div>' +
+                               buildTeamBoxscoreHtml(team2Players) +
+                               buildTeamStatsHtml(team2StatsArray) +
                              '</div>' +
                            '</div>';
                 contentDiv.innerHTML = html;
@@ -624,13 +629,15 @@ Project Context: TitanUp Scoreboard - V4.3
         var pass = extractCategoryFromBoxscore(teamBoxscore, 'passing', 3);
         var rush = extractCategoryFromBoxscore(teamBoxscore, 'rushing', 3);
         var rec = extractCategoryFromBoxscore(teamBoxscore, 'receiving', 3);
+        var def = extractCategoryFromBoxscore(teamBoxscore, 'defensive', 2); // Pull top 2 defensive players
 
-        if (!pass && !rush && !rec) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
+        if (!pass && !rush && !rec && !def) return '<div style="font-size: 0.65rem; color: #6c757d;">No data available.</div>';
 
         var html = '<div class="d-flex flex-column">';
         if (pass) html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">PASS:</span><br>' + pass + '</div>';
         if (rush) html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">RUSH:</span><br>' + rush + '</div>';
         if (rec)  html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">REC:</span><br>' + rec + '</div>';
+        if (def)  html += '<div class="stat-line"><span class="fw-bold" style="color: #0C2340;">DEF:</span><br>' + def + '</div>';
         html += '</div>';
         return html;
       }
@@ -652,7 +659,6 @@ Project Context: TitanUp Scoreboard - V4.3
             var athleteName = athleteData.athlete.shortName || athleteData.athlete.lastName || 'Unknown';
             var stats = athleteData.stats || [];
             
-            // Reconstruct stat string from raw arrays
             var statString = "";
             if (categoryName === 'passing' && stats.length >= 4) {
                 statString = stats[0] + ', ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
@@ -660,14 +666,15 @@ Project Context: TitanUp Scoreboard - V4.3
                 statString = stats[0] + ' CAR, ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
             } else if (categoryName === 'receiving' && stats.length >= 4) {
                 statString = stats[0] + ' REC, ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
+            } else if (categoryName === 'defensive' && stats.length >= 4) {
+                statString = stats[0] + ' TKL';
+                // ESPN Defense structure typically: [0] TOT TKL, [3] SACKS
+                if (stats[3] && stats[3] !== '0' && stats[3] !== '0.0') statString += ', ' + stats[3] + ' SCK';
             } else {
-                statString = stats.join(', '); // Fallback safety
+                statString = stats.join(', '); 
             }
             
-            // Clean up empty TDs to save vertical space
-            if (statString.includes(', 0 TD')) {
-                statString = statString.replace(', 0 TD', '');
-            }
+            if (statString.includes(', 0 TD')) statString = statString.replace(', 0 TD', '');
             
             if (i === 0) players.push('<strong>' + athleteName + '</strong> <span style="opacity: 0.85;">(' + statString + ')</span>');
             else players.push('<span class="stat-secondary">' + athleteName + ' (' + statString + ')</span>');
@@ -676,6 +683,28 @@ Project Context: TitanUp Scoreboard - V4.3
           return players.join('<br>');
         }
         return null;
+      }
+      
+      function buildTeamStatsHtml(statsArray) {
+        if (!statsArray || statsArray.length === 0) return '';
+        
+        var yds = getTeamStatValue(statsArray, 'totalOffensiveYards');
+        var to = getTeamStatValue(statsArray, 'turnovers');
+        var pen = getTeamStatValue(statsArray, 'penalties'); // Usually structured as "7-45" (count-yards)
+        var top = getTeamStatValue(statsArray, 'possessionTime');
+        
+        return '<div class="mt-2 pt-2 border-top" style="border-color: rgba(12,35,64,0.1) !important;">' +
+                 '<div class="fw-bold mb-2" style="font-size: 0.65rem; color: #C8102E; letter-spacing: 0.5px;">TEAM STATS</div>' +
+                 '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">YDS:</span> ' + yds + '</div>' +
+                 '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">TO:</span> ' + to + '</div>' +
+                 '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">PEN:</span> ' + pen + '</div>' +
+                 '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">TOP:</span> ' + top + '</div>' +
+               '</div>';
+      }
+      
+      function getTeamStatValue(statsArray, statName) {
+        var stat = statsArray.find(function(s) { return s.name === statName; });
+        return stat ? stat.displayValue : '-';
       }
 
       function formatKickoffTime(dateString) {
