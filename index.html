@@ -1,0 +1,479 @@
+<script type="text/plain">
+Filename: index.html
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme).
+Project Context: TitanUp Scoreboard - V1.0
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0C2340">
+
+  <title>TitanUp Scoreboard</title>
+
+  <!-- Desktop Browser Favicons -->
+  <link rel="shortcut icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
+  <link rel="icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
+  
+  <!-- Mobile Launcher Icon -->
+  <link rel="apple-touch-icon" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
+
+  <!-- Google Fonts: Archivo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- Inline Web App Manifest & Service Worker -->
+  <script>
+    (function () {
+      var iconUrl = "https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png";
+      var manifest = {
+        name: "TitanUp Scoreboard",
+        short_name: "TitanUp",
+        start_url: window.location.href,
+        display: "standalone",
+        background_color: "#071526",
+        theme_color: "#0C2340",
+        icons: [
+          { src: iconUrl, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+          { src: iconUrl, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+        ]
+      };
+      var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      document.head.appendChild(Object.assign(document.createElement('link'), {
+        rel: 'manifest', href: URL.createObjectURL(manifestBlob)
+      }));
+
+      if ('serviceWorker' in navigator) {
+        var swBlob = new Blob(["self.addEventListener('fetch', function(e) {});"], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
+      }
+    })();
+  </script>
+
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <style>
+    body { background-color: #071526; color: white; font-family: 'Archivo', sans-serif; }
+    .navbar-titans { background-color: #0C2340; border-bottom: 2px solid #4B92DB; }
+    
+    /* Responsive Header Scaling */
+    .nav-logo { width: 40px; height: 40px; }
+    .nav-title { font-weight: 900; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; }
+    
+    @media (min-width: 576px) {
+      .nav-logo { width: 54px; height: 54px; }
+      .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
+    }
+
+    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
+    .game-card-titans { border: 2px solid #4B92DB; box-shadow: 0 4px 15px rgba(75, 146, 219, 0.2); }
+    .game-card-primetime { border: 1px solid #C8102E; }
+    .titans-badge-strip { background-color: #4B92DB; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
+    .team-logo { width: 36px; height: 36px; object-fit: contain; }
+    .team-name { font-weight: 700; font-size: 1rem; }
+    .team-record { font-size: 0.7rem; color: #adb5bd; }
+    .team-score { font-size: 1.5rem; font-weight: 900; }
+    .status-badge { font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 4px; }
+    .status-live { background-color: #C8102E; color: white; }
+    .status-final { background-color: #495057; color: white; }
+    .status-scheduled { background-color: transparent; border: 1px solid #6c757d; color: #ced4da; }
+    .spoiler-container { position: relative; }
+    .spoiler-blur { filter: blur(12px); pointer-events: none; user-select: none; opacity: 0.6; }
+    .spoiler-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
+    .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-reveal:hover { background-color: #a00d25; }
+    .fab-refresh { position: fixed; bottom: 24px; right: 24px; background-color: #C8102E; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: transform 0.2s; }
+    .fab-refresh:active { transform: scale(0.9); }
+    .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+    /* Toggle Switch Styling Tweaks */
+    .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
+    .form-switch .form-check-input:checked { background-color: #4B92DB; border-color: #4B92DB; }
+    
+    /* Offcanvas dark mode overrides */
+    .offcanvas { background-color: #071526 !important; border-left: 1px solid rgba(255,255,255,0.1); }
+  </style>
+</head>
+<body>
+
+  <header class="navbar navbar-titans sticky-top px-3 py-2">
+    <div class="container-fluid d-flex justify-content-between align-items-center p-0">
+      <div class="d-flex align-items-center gap-2 gap-sm-3">
+        <img src="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png" alt="TitanUp Logo" class="nav-logo">
+        <div class="d-flex flex-column justify-content-center">
+          <h1 class="mb-0 text-white text-uppercase nav-title">TITAN UP</h1>
+          <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; line-height: 1;">Loading NFL Slate...</small>
+        </div>
+      </div>
+
+      <!-- Drawer Trigger Button -->
+      <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
+        <i class="bi bi-sliders fs-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Settings Offcanvas Drawer -->
+  <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
+    <div class="offcanvas-header border-bottom border-secondary">
+      <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="letter-spacing: 1px;">SETTINGS</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column gap-4 mt-2">
+      
+      <!-- Live First Toggle inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
+        <div class="form-check form-switch d-flex align-items-center p-0">
+          <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="sortFinishedToggle" style="width: 2.5em; height: 1.25em;">
+          <label class="form-check-label text-white" for="sortFinishedToggle" style="cursor: pointer; font-size: 1rem;">Live Games First</label>
+        </div>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the slate to keep live action at the top.</small>
+      </div>
+
+      <!-- Spoiler Shield Expiration Time inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
+        <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
+          <option value="0">Midnight (End of Game Day)</option>
+          <option value="3">3:00 AM (Next Day)</option>
+          <option value="9">9:00 AM (Next Day)</option>
+          <option value="12">12:00 PM Noon (Next Day)</option>
+          <option value="18">6:00 PM (Next Day)</option>
+          <option value="24">Midnight (Full Next Day Protected)</option>
+        </select>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">When should the app stop automatically hiding the Titans' final score?</small>
+      </div>
+
+      <!-- Week Selector inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
+        <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
+          <option value="current" selected>Current Week</option>
+          <option value="1">Week 1</option>
+          <option value="2">Week 2</option>
+          <option value="3">Week 3</option>
+          <option value="4">Week 4</option>
+          <option value="5">Week 5</option>
+          <option value="6">Week 6</option>
+          <option value="7">Week 7</option>
+          <option value="8">Week 8</option>
+          <option value="9">Week 9</option>
+          <option value="10">Week 10</option>
+          <option value="11">Week 11</option>
+          <option value="12">Week 12</option>
+          <option value="13">Week 13</option>
+          <option value="14">Week 14</option>
+          <option value="15">Week 15</option>
+          <option value="16">Week 16</option>
+          <option value="17">Week 17</option>
+          <option value="18">Week 18</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <main class="container py-3" style="max-width: 600px;">
+    <section id="titansSection" class="mb-3"></section>
+    
+    <div class="d-flex justify-content-between align-items-center px-1 mb-2">
+      <span class="text-uppercase fw-bold text-muted" style="font-size: 0.75rem; letter-spacing: 0.08em;">NFL Slate</span>
+      <span class="text-muted" style="font-size: 0.7rem;" id="lastUpdatedLabel"></span>
+    </div>
+
+    <section id="nflGamesList" class="d-flex flex-column gap-2">
+      <div class="text-center py-5 text-muted">
+        <div class="spinner-border spinner-border-sm text-primary mb-2"></div>
+        <div>Loading NFL matchups...</div>
+      </div>
+    </section>
+
+    <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
+      TitanUp Scoreboard &bull; V1.0
+    </div>
+  </main>
+
+  <button id="btnRefresh" class="fab-refresh" aria-label="Refresh Scores">
+    <i class="bi bi-arrow-clockwise fs-4"></i>
+  </button>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    (function () {
+      'use strict';
+      var state = {
+        titansId: '10', // ESPN NFL ID for Tennessee Titans
+        baseUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+        pollingInterval: 45000,
+        pollTimer: null,
+        selectedWeek: 'current',
+        titansScoreUnlocked: sessionStorage.getItem('titan_score_unlocked') === 'true',
+        liveFirst: localStorage.getItem('titan_live_first') === 'true',
+        spoilerExpirationHour: localStorage.getItem('titan_spoiler_hour') !== null ? parseInt(localStorage.getItem('titan_spoiler_hour')) : 3,
+        isFetching: false,
+        cachedData: null
+      };
+
+      var dom = {
+        titansSection: document.getElementById('titansSection'),
+        nflGamesList: document.getElementById('nflGamesList'),
+        weekSelector: document.getElementById('weekSelector'),
+        sortFinishedToggle: document.getElementById('sortFinishedToggle'),
+        spoilerExpirationSelector: document.getElementById('spoilerExpirationSelector'),
+        statusModeLabel: document.getElementById('statusModeLabel'),
+        lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
+        btnRefresh: document.getElementById('btnRefresh')
+      };
+
+      function init() {
+        dom.sortFinishedToggle.checked = state.liveFirst;
+        dom.spoilerExpirationSelector.value = state.spoilerExpirationHour;
+        
+        setupEventListeners();
+        fetchScoreboardData();
+        startPolling();
+      }
+
+      function setupEventListeners() {
+        dom.weekSelector.addEventListener('change', function (e) {
+          state.selectedWeek = e.target.value;
+          fetchScoreboardData();
+          
+          var offcanvasEl = document.getElementById('settingsDrawer');
+          var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+          if(offcanvasInstance) {
+            offcanvasInstance.hide();
+          }
+        });
+        
+        dom.sortFinishedToggle.addEventListener('change', function(e) {
+          state.liveFirst = e.target.checked;
+          localStorage.setItem('titan_live_first', state.liveFirst);
+          if (state.cachedData) {
+            processAndRender(state.cachedData);
+          }
+        });
+
+        dom.spoilerExpirationSelector.addEventListener('change', function(e) {
+          state.spoilerExpirationHour = parseInt(e.target.value);
+          localStorage.setItem('titan_spoiler_hour', state.spoilerExpirationHour);
+          if (state.cachedData) {
+            processAndRender(state.cachedData);
+          }
+        });
+
+        dom.btnRefresh.addEventListener('click', function () {
+          if (state.isFetching) return;
+          var icon = dom.btnRefresh.querySelector('i');
+          icon.classList.add('spinning');
+          fetchScoreboardData(function () { icon.classList.remove('spinning'); });
+        });
+      }
+
+      function startPolling() {
+        if (state.pollTimer) clearInterval(state.pollTimer);
+        state.pollTimer = setInterval(function () {
+          if (state.selectedWeek === 'current') fetchScoreboardData();
+        }, state.pollingInterval);
+      }
+
+      function fetchScoreboardData(callback) {
+        state.isFetching = true;
+        var url = state.baseUrl;
+        if (state.selectedWeek !== 'current') url += '?week=' + state.selectedWeek;
+
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            state.cachedData = data;
+            processAndRender(data);
+            state.isFetching = false;
+            if (callback) callback();
+          })
+          .catch(err => {
+            console.error(err);
+            state.isFetching = false;
+            if (callback) callback();
+            Swal.fire({ icon: 'error', title: 'Connection Error', text: 'Unable to fetch scores.', confirmButtonColor: '#C8102E' });
+          });
+      }
+
+      function processAndRender(data) {
+        updateHeaderMetadata();
+        var events = data.events || [];
+        if (!events.length) {
+          dom.titansSection.innerHTML = '';
+          dom.nflGamesList.innerHTML = '<div class="text-center py-5 text-muted">No games scheduled.</div>';
+          return;
+        }
+
+        var normalizedGames = events.map(normalizeGameData);
+        var titansGame = null;
+        var otherGames = [];
+
+        normalizedGames.forEach(function (game) {
+          if (game.homeTeam.id === state.titansId || game.awayTeam.id === state.titansId) titansGame = game;
+          else otherGames.push(game);
+        });
+
+        var today = new Date().getDay();
+        otherGames.sort(function (a, b) {
+          if (state.liveFirst) {
+            var aIsFinal = a.state === 'post';
+            var bIsFinal = b.state === 'post';
+            if (aIsFinal && !bIsFinal) return 1;
+            if (!aIsFinal && bIsFinal) return -1;
+            
+            var aIsLive = a.state === 'in';
+            var bIsLive = b.state === 'in';
+            if (aIsLive && !bIsLive) return -1;
+            if (!aIsLive && bIsLive) return 1;
+          }
+          return new Date(a.date) - new Date(b.date);
+        });
+
+        renderTitansGame(titansGame);
+        renderOtherGames(otherGames);
+      }
+
+      function normalizeGameData(event) {
+        var comp = (event.competitions && event.competitions[0]) || {};
+        var home = (comp.competitors || []).find(c => c.homeAway === 'home') || {};
+        var away = (comp.competitors || []).find(c => c.homeAway === 'away') || {};
+        var tv = (comp.broadcasts && comp.broadcasts[0] && comp.broadcasts[0].names) ? comp.broadcasts[0].names[0] : '';
+        
+        return {
+          id: event.id,
+          date: event.date, 
+          state: (event.status && event.status.type) ? event.status.type.state : 'pre',
+          statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
+          tvStation: tv,
+          homeTeam: extractTeamDetails(home),
+          awayTeam: extractTeamDetails(away)
+        };
+      }
+
+      function extractTeamDetails(competitor) {
+        var team = competitor.team || {};
+        return {
+          id: team.id,
+          name: team.shortDisplayName || team.displayName || 'TBD',
+          logo: team.logo || '',
+          score: competitor.score || '0',
+          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : ''
+        };
+      }
+
+      function updateHeaderMetadata() {
+        var now = new Date();
+        dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        var today = now.getDay();
+        
+        if (today === 0) dom.statusModeLabel.textContent = 'Sunday NFL Slate';
+        else if (today === 1) dom.statusModeLabel.textContent = 'Monday Night Football';
+        else if (today === 4) dom.statusModeLabel.textContent = 'Thursday Night Football';
+        else dom.statusModeLabel.textContent = 'Upcoming Weekend Slate';
+      }
+
+      function renderTitansGame(game) {
+        if (!game) {
+          dom.titansSection.innerHTML = '<div class="game-card p-3 text-center"><div class="fw-bold text-white fs-5">Open Week / Bye</div></div>';
+          return;
+        }
+
+        var now = new Date();
+        var gameDate = new Date(game.date);
+        var expirationDate = new Date(gameDate);
+        
+        expirationDate.setHours(0, 0, 0, 0); 
+        expirationDate.setDate(expirationDate.getDate() + 1); 
+        expirationDate.setHours(state.spoilerExpirationHour); 
+        
+        var isSpoilerWindow = now < expirationDate;
+        var isLive = game.state === 'in';
+        var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
+        
+        var needsShield = (isLive || isRecentFinal) && !state.titansScoreUnlocked;
+
+        dom.titansSection.innerHTML = 
+          '<div class="game-card game-card-titans">' +
+            '<div class="titans-badge-strip">Titans Matchup</div>' +
+            '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
+              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-white"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
+              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
+            '</div>' +
+          '</div>';
+
+        if (needsShield) {
+          document.getElementById('btnRevealTitans').addEventListener('click', function() {
+            Swal.fire({
+              title: 'Caught up?', text: 'Reveal Titans score for this session?', icon: 'warning',
+              showCancelButton: true, confirmButtonColor: '#C8102E', confirmButtonText: 'Yes, reveal score'
+            }).then(res => {
+              if (res.isConfirmed) {
+                state.titansScoreUnlocked = true;
+                sessionStorage.setItem('titan_score_unlocked', 'true');
+                if (state.cachedData) {
+                  processAndRender(state.cachedData);
+                } else {
+                  fetchScoreboardData();
+                }
+              }
+            });
+          });
+        }
+      }
+
+      function renderOtherGames(games) {
+        dom.nflGamesList.innerHTML = games.length ? games.map(function(game) {
+          
+          // Primetime Logic parsing based on user constraints
+          var tv = (game.tvStation || '').toUpperCase();
+          var isPrimetime = tv.includes('PRIME') || tv.includes('NBC') || tv.includes('ESPN') || tv.includes('ABC') || tv.includes('PEACOCK') || tv.includes('NETFLIX');
+          
+          var highlightClass = isPrimetime ? 'game-card-primetime' : '';
+          
+          return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, isPrimetime, false) + buildScoreRowHtml(game) + '</div>';
+        }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
+      }
+
+      function buildGameHeaderHtml(game, isPrimetime, isTitansGame) {
+        var timeLabel = game.state === 'pre' ? formatKickoffTime(game.date) : (game.statusDetail || 'LIVE');
+        var badgeClass = game.state === 'in' ? 'status-live' : (game.state === 'post' ? 'status-final' : 'status-scheduled');
+        
+        var primetimeBadge = isPrimetime ? '<span class="badge bg-danger text-white fw-bold" style="font-size: 0.65rem;">PRIMETIME</span>' : '';
+        
+        return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + primetimeBadge + '</div>';
+      }
+
+      function buildScoreRowHtml(game) {
+        return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, game.state === 'pre') + buildTeamRowHtml(game.homeTeam, game.state === 'pre') + '</div>';
+      }
+
+      function buildTeamRowHtml(team, isScheduled) {
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name text-white">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
+      }
+
+      function formatKickoffTime(dateString) {
+        if (!dateString) return 'TBD';
+        var d = new Date(dateString);
+        return d.toLocaleDateString([], { weekday: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
