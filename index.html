@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Light Mode Inversion with AFC South Highlights).
-Project Context: TitanUp Scoreboard - V2.3
+Project Context: TitanUp Scoreboard - V2.4
 </script>
 
 <!DOCTYPE html>
@@ -205,7 +205,7 @@ Project Context: TitanUp Scoreboard - V2.3
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V2.3
+      TitanUp Scoreboard &bull; V2.4
     </div>
   </main>
 
@@ -412,12 +412,15 @@ Project Context: TitanUp Scoreboard - V2.3
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
         
         var needsShield = (isLive || isRecentFinal) && !state.titansScoreUnlocked;
+        
+        var buttonText = isLive ? 'Reveal Live Score' : 'Reveal Final Score';
+        var alertText = isLive ? 'Reveal live Titans score for this session?' : 'Reveal final Titans score for this session?';
 
         dom.titansSection.innerHTML = 
           '<div class="game-card game-card-titans">' +
             '<div class="titans-badge-strip">Titans Matchup</div>' +
             '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
-              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2" style="color: #0C2340;"></i><div class="fw-bold mb-1" style="color: #0C2340;">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
+              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2" style="color: #0C2340;"></i><div class="fw-bold mb-1" style="color: #0C2340;">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> ' + buttonText + '</button></div>' : '') +
               '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
             '</div>' +
           '</div>';
@@ -425,7 +428,7 @@ Project Context: TitanUp Scoreboard - V2.3
         if (needsShield) {
           document.getElementById('btnRevealTitans').addEventListener('click', function() {
             Swal.fire({
-              title: 'Caught up?', text: 'Reveal Titans score for this session?', icon: 'warning',
+              title: 'Caught up?', text: alertText, icon: 'warning',
               showCancelButton: true, confirmButtonColor: '#C8102E', confirmButtonText: 'Yes, reveal score'
             }).then(res => {
               if (res.isConfirmed) {
