@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Pre-Game Odds, Season Leaders, Team Hub Drawer, Depth Chart Array Fix).
-Project Context: TitanUp Scoreboard - V5.3
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Pre-Game Odds, Season Leaders, Team Hub Drawer, Debug Payload Dump).
+Project Context: TitanUp Scoreboard - V5.4
 </script>
 
 <!DOCTYPE html>
@@ -133,7 +133,6 @@ Project Context: TitanUp Scoreboard - V5.3
     </div>
   </header>
 
-  <!-- Team Hub Drawer (Left) -->
   <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="hubDrawer" aria-labelledby="hubDrawerLabel" style="max-width: 340px; border-right: none; background-color: #f8f9fa !important;">
     <div class="offcanvas-header flex-column align-items-start p-0 border-bottom border-secondary" id="hubDrawerHeader" style="background-color: #0C2340; transition: background-color 0.3s; position: sticky; top: 0; z-index: 10;">
       <div class="d-flex justify-content-between w-100 p-3 pb-0">
@@ -168,7 +167,6 @@ Project Context: TitanUp Scoreboard - V5.3
     </div>
   </div>
 
-  <!-- Global Settings Drawer (Right) -->
   <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
     <div class="offcanvas-header border-bottom border-secondary">
       <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="letter-spacing: 1px;">SETTINGS</h5>
@@ -228,7 +226,7 @@ Project Context: TitanUp Scoreboard - V5.3
       </div>
     </section>
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V5.3
+      TitanUp Scoreboard &bull; V5.4
     </div>
   </main>
 
@@ -594,8 +592,6 @@ Project Context: TitanUp Scoreboard - V5.3
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div>' + scoreHtml + '</div>';
       }
 
-      // --- V5.3 Team Hub Drawer Logic & Depth Chart Array Fix ---
-      
       function openTeamHubDrawer(teamId, teamName, teamColor) {
         state.currentHubTeamId = teamId;
         var header = document.getElementById('hubDrawerHeader');
@@ -740,9 +736,17 @@ Project Context: TitanUp Scoreboard - V5.3
         fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/' + teamId + '/depthcharts')
           .then(res => res.json())
           .then(data => {
-             // V5.3 Data Array Fix
+             // V5.4 Debug Payload Dump
              var items = Array.isArray(data) ? data : (data.items || []);
-             if (!items.length) { body.innerHTML = '<div class="text-center py-4 text-muted">Depth chart not available.</div>'; return; }
+             
+             if (!items.length) { 
+                 var rawString = JSON.stringify(data, null, 2);
+                 body.innerHTML = '<div class="p-3 text-start" style="font-family: monospace; font-size: 0.65rem; color: #0C2340; word-break: break-all;">' +
+                                  '<div class="fw-bold mb-2 text-danger">DEBUG RAW PAYLOAD:</div>' + 
+                                  rawString.replace(/\n/g, '<br>').replace(/ /g, '&nbsp;') + 
+                                  '</div>'; 
+                 return; 
+             }
              
              var html = '<div class="p-3">';
              items.forEach(function(unit) {
@@ -781,7 +785,10 @@ Project Context: TitanUp Scoreboard - V5.3
              });
              html += '</div>';
              body.innerHTML = html;
-          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load depth chart.</div>'; });
+          }).catch(err => { 
+             body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load depth chart. Network Error.</div>'; 
+             console.error(err);
+          });
       }
 
       function buildTickerHtml(game) {
