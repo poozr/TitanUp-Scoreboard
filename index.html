@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Schedule Cross-Reference, Manual Event Delegation, Share UI, API Attribution).
-Project Context: TitanUp Scoreboard - V4.9
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Pre-Game Odds, Season Leaders, Team Hub Tabbed Drawer).
+Project Context: TitanUp Scoreboard - V5.1
 </script>
 
 <!DOCTYPE html>
@@ -16,19 +16,14 @@ Project Context: TitanUp Scoreboard - V4.9
 
   <title>TitanUp Scoreboard</title>
 
-  <script type="text/plain">// Desktop Browser Favicons</script>
   <link rel="shortcut icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
   <link rel="icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
-  
-  <script type="text/plain">// Mobile Launcher Icon</script>
   <link rel="apple-touch-icon" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
 
-  <script type="text/plain">// Google Fonts: Archivo</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&display=swap" rel="stylesheet">
 
-  <script type="text/plain">// Inline Web App Manifest & Service Worker</script>
   <script>
     (function () {
       var iconUrl = "https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png";
@@ -56,7 +51,6 @@ Project Context: TitanUp Scoreboard - V4.9
     })();
   </script>
 
-  <script type="text/plain">// Bootstrap 5 CSS & Icons</script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -65,7 +59,6 @@ Project Context: TitanUp Scoreboard - V4.9
     body { background-color: #4994ce; color: #0C2340; font-family: 'Archivo', sans-serif; }
     .navbar-titans { background-color: #0C2340; border-bottom: 3px solid #C8102E; }
     
-    /* Responsive Header Scaling */
     .nav-logo { width: 40px; height: 40px; }
     .nav-title { font-weight: 900; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; color: #ffffff; }
     
@@ -118,6 +111,10 @@ Project Context: TitanUp Scoreboard - V4.9
     
     .logo-clickable { cursor: pointer; transition: transform 0.2s; position: relative; z-index: 20; }
     .logo-clickable:hover { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+
+    /* V5.1 Hub Drawer Nav Styling */
+    .hub-tabs .nav-link { color: rgba(255,255,255,0.6); font-weight: bold; border-radius: 0; border-bottom: 2px solid transparent; padding: 10px 0; }
+    .hub-tabs .nav-link.active { color: #ffffff; background: transparent; border-bottom: 2px solid #ffffff; }
   </style>
 </head>
 <body>
@@ -138,36 +135,55 @@ Project Context: TitanUp Scoreboard - V4.9
     </div>
   </header>
 
-  <script type="text/plain">// Team Schedule Offcanvas Drawer (Left)</script>
-  <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="scheduleDrawer" aria-labelledby="scheduleDrawerLabel" style="max-width: 320px; border-right: none;">
-    <div class="offcanvas-header border-bottom border-secondary" id="scheduleDrawerHeader" style="background-color: #0C2340; transition: background-color 0.3s;">
-      <h5 class="offcanvas-title fw-bold text-uppercase" id="scheduleDrawerLabel" style="letter-spacing: 1px; text-shadow: 0px 1px 3px rgba(0,0,0,0.6);">TEAM SCHEDULE</h5>
-      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  <!-- V5.1 Team Hub Drawer (Left) -->
+  <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="hubDrawer" aria-labelledby="hubDrawerLabel" style="max-width: 340px; border-right: none; background-color: #f8f9fa !important;">
+    <div class="offcanvas-header flex-column align-items-start p-0 border-bottom border-secondary" id="hubDrawerHeader" style="background-color: #0C2340; transition: background-color 0.3s; position: sticky; top: 0; z-index: 10;">
+      <div class="d-flex justify-content-between w-100 p-3 pb-0">
+        <h5 class="offcanvas-title fw-bold text-uppercase text-white" id="hubDrawerLabel" style="letter-spacing: 1px; text-shadow: 0px 1px 3px rgba(0,0,0,0.6);">TEAM HUB</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <ul class="nav nav-pills w-100 hub-tabs d-flex text-center mt-2 px-3" id="hubTabs" role="tablist" style="background-color: rgba(0,0,0,0.15);">
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link active w-100" style="font-size: 0.7rem; letter-spacing: 1px;" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#pane-schedule" type="button" role="tab">SCHEDULE</button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link w-100" style="font-size: 0.7rem; letter-spacing: 1px;" id="injuries-tab" data-bs-toggle="tab" data-bs-target="#pane-injuries" type="button" role="tab">INJURIES</button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link w-100" style="font-size: 0.7rem; letter-spacing: 1px;" id="depth-tab" data-bs-toggle="tab" data-bs-target="#pane-depth" type="button" role="tab">DEPTH</button>
+        </li>
+      </ul>
     </div>
-    <div class="offcanvas-body p-0" id="scheduleDrawerBody" style="background-color: #f8f9fa; color: #0C2340;">
-      <div class="text-center py-5">
-         <div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div>
+    
+    <div class="offcanvas-body p-0" style="color: #0C2340;">
+      <div class="tab-content" id="hubTabContent">
+        <div class="tab-pane fade show active" id="pane-schedule" role="tabpanel">
+           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+        </div>
+        <div class="tab-pane fade" id="pane-injuries" role="tabpanel">
+           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+        </div>
+        <div class="tab-pane fade" id="pane-depth" role="tabpanel">
+           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <script type="text/plain">// Global Settings Offcanvas Drawer (Right)</script>
+  <!-- Global Settings Drawer (Right) -->
   <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
     <div class="offcanvas-header border-bottom border-secondary">
       <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="letter-spacing: 1px;">SETTINGS</h5>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column gap-4 mt-2">
-      
       <div>
         <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
         <div class="form-check form-switch d-flex align-items-center p-0">
           <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="sortFinishedToggle" style="width: 2.5em; height: 1.25em;">
           <label class="form-check-label text-white" for="sortFinishedToggle" style="cursor: pointer; font-size: 1rem;">Live Games First</label>
         </div>
-        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the slate to keep live action at the top.</small>
       </div>
-
       <div>
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
         <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
@@ -178,45 +194,26 @@ Project Context: TitanUp Scoreboard - V4.9
           <option value="18">6:00 PM (Next Day)</option>
           <option value="24">Midnight (Full Next Day Protected)</option>
         </select>
-        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">When should the app stop automatically hiding the Titans' final score?</small>
       </div>
-
       <div>
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
           <option value="current" selected>Current Week</option>
-          <option value="1">Week 1</option>
-          <option value="2">Week 2</option>
-          <option value="3">Week 3</option>
-          <option value="4">Week 4</option>
-          <option value="5">Week 5</option>
-          <option value="6">Week 6</option>
-          <option value="7">Week 7</option>
-          <option value="8">Week 8</option>
-          <option value="9">Week 9</option>
-          <option value="10">Week 10</option>
-          <option value="11">Week 11</option>
-          <option value="12">Week 12</option>
-          <option value="13">Week 13</option>
-          <option value="14">Week 14</option>
-          <option value="15">Week 15</option>
-          <option value="16">Week 16</option>
-          <option value="17">Week 17</option>
-          <option value="18">Week 18</option>
+          <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option>
+          <option value="5">Week 5</option><option value="6">Week 6</option><option value="7">Week 7</option><option value="8">Week 8</option>
+          <option value="9">Week 9</option><option value="10">Week 10</option><option value="11">Week 11</option><option value="12">Week 12</option>
+          <option value="13">Week 13</option><option value="14">Week 14</option><option value="15">Week 15</option><option value="16">Week 16</option>
+          <option value="17">Week 17</option><option value="18">Week 18</option>
         </select>
       </div>
-
       <div class="mt-2 border-top border-secondary pt-4">
         <button id="btnShareApp" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2" style="border-width: 2px;">
           <i class="bi bi-share-fill"></i> Share TitanUp Scoreboard
         </button>
       </div>
-
-      <script type="text/plain">// V4.9 API Attribution</script>
       <div class="text-center mt-3 pt-3 border-top border-secondary">
         <small style="color: rgba(255,255,255,0.4); font-size: 0.6rem; letter-spacing: 0.5px;">Factual scoreboard data provided courtesy of ESPN.</small>
       </div>
-
     </div>
   </div>
 
@@ -236,7 +233,7 @@ Project Context: TitanUp Scoreboard - V4.9
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.9
+      TitanUp Scoreboard &bull; V5.1
     </div>
   </main>
 
@@ -262,7 +259,8 @@ Project Context: TitanUp Scoreboard - V4.9
         spoilerExpirationHour: localStorage.getItem('titan_spoiler_hour') !== null ? parseInt(localStorage.getItem('titan_spoiler_hour')) : 3,
         isFetching: false,
         cachedData: null,
-        openAccordions: [] 
+        openAccordions: [],
+        currentHubTeamId: null // V5.1 Tracks active team in drawer
       };
 
       var dom = {
@@ -318,11 +316,7 @@ Project Context: TitanUp Scoreboard - V4.9
         dom.btnShareApp.addEventListener('click', function() {
           var url = window.location.href;
           if (navigator.share) {
-            navigator.share({
-              title: 'TitanUp Scoreboard',
-              text: 'Check out the TitanUp NFL Scoreboard!',
-              url: url
-            }).catch(console.error);
+            navigator.share({ title: 'TitanUp Scoreboard', url: url }).catch(console.error);
           } else {
             navigator.clipboard.writeText(url).then(function() {
               Swal.fire({ title: 'Copied!', text: 'App URL copied to clipboard.', icon: 'success', confirmButtonColor: '#C8102E', timer: 2500 });
@@ -347,7 +341,7 @@ Project Context: TitanUp Scoreboard - V4.9
             var teamId = logoTarget.getAttribute('data-team-id');
             var teamName = logoTarget.getAttribute('data-team-name');
             var teamColor = logoTarget.getAttribute('data-team-color');
-            openScheduleDrawer(teamId, teamName, teamColor);
+            openTeamHubDrawer(teamId, teamName, teamColor);
             return; 
           }
 
@@ -383,6 +377,16 @@ Project Context: TitanUp Scoreboard - V4.9
             var gameId = e.target.id.replace('stats-', '');
             state.openAccordions = state.openAccordions.filter(id => id !== gameId);
           }
+        });
+
+        // V5.1 Team Hub Tab Lazy Loaders
+        var hubTabs = document.querySelectorAll('#hubTabs button[data-bs-toggle="tab"]');
+        hubTabs.forEach(function(tab) {
+          tab.addEventListener('shown.bs.tab', function (event) {
+            var target = event.target.getAttribute('data-bs-target');
+            if (target === '#pane-injuries') fetchTeamInjuries(state.currentHubTeamId);
+            if (target === '#pane-depth') fetchTeamDepthChart(state.currentHubTeamId);
+          });
         });
       }
 
@@ -434,7 +438,6 @@ Project Context: TitanUp Scoreboard - V4.9
           else otherGames.push(game);
         });
 
-        var today = new Date().getDay();
         otherGames.sort(function (a, b) {
           if (state.liveFirst) {
             var aIsFinal = a.state === 'post';
@@ -463,12 +466,17 @@ Project Context: TitanUp Scoreboard - V4.9
         var away = (comp.competitors || []).find(c => c.homeAway === 'away') || {};
         var tv = (comp.broadcasts && comp.broadcasts[0] && comp.broadcasts[0].names) ? comp.broadcasts[0].names[0] : '';
         
+        // V5.1 Capture Odds Array
+        var oddsObj = comp.odds && comp.odds[0] ? comp.odds[0] : null;
+
         return {
           id: event.id,
           date: event.date, 
           state: (event.status && event.status.type) ? event.status.type.state : 'pre',
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
+          oddsDetails: oddsObj && oddsObj.details ? oddsObj.details : 'TBD',
+          oddsOU: oddsObj && oddsObj.overUnder ? oddsObj.overUnder : 'TBD',
           homeTeam: extractTeamDetails(home),
           awayTeam: extractTeamDetails(away),
           gameLeaders: comp.leaders || []
@@ -483,7 +491,8 @@ Project Context: TitanUp Scoreboard - V4.9
           logo: team.logo || '',
           score: competitor.score || '0',
           record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : '',
-          color: team.color || '0C2340' 
+          color: team.color || '0C2340',
+          seasonLeaders: competitor.leaders || [] // V5.1 Season Leader Capture
         };
       }
 
@@ -502,7 +511,6 @@ Project Context: TitanUp Scoreboard - V4.9
           dom.titansSection.innerHTML = '<div class="game-card p-3 text-center"><div class="fw-bold fs-5">Open Week / Bye</div></div>';
           return;
         }
-
         var now = new Date();
         var gameDate = new Date(game.date);
         var expirationDate = new Date(gameDate);
@@ -525,8 +533,8 @@ Project Context: TitanUp Scoreboard - V4.9
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2" style="color: #0C2340;"></i><div class="fw-bold mb-1" style="color: #0C2340;">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> ' + buttonText + '</button></div>' : '') +
               '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + 
                 '<div class="p-3 card-clickable" data-target-id="stats-' + game.id + '">' +
-                  buildGameHeaderHtml(game, false, true) + 
-                  buildScoreRowHtml(game) + 
+                  buildGameHeaderHtml(game, false) + 
+                  (game.state === 'pre' ? buildPreGameRowHtml(game) : buildLivePostGameRowHtml(game)) + 
                   buildStatCollapseHtml(game) + 
                 '</div>' +
                 buildTickerHtml(game) + 
@@ -536,10 +544,8 @@ Project Context: TitanUp Scoreboard - V4.9
 
         if (needsShield) {
           document.getElementById('btnRevealTitans').addEventListener('click', function() {
-            Swal.fire({
-              title: 'Caught up?', text: alertText, icon: 'warning',
-              showCancelButton: true, confirmButtonColor: '#C8102E', confirmButtonText: 'Yes, reveal score'
-            }).then(res => {
+            Swal.fire({ title: 'Caught up?', text: alertText, icon: 'warning', showCancelButton: true, confirmButtonColor: '#C8102E', confirmButtonText: 'Yes, reveal score' })
+            .then(res => {
               if (res.isConfirmed) {
                 state.titansScoreUnlocked = true;
                 sessionStorage.setItem('titan_score_unlocked', 'true');
@@ -556,15 +562,12 @@ Project Context: TitanUp Scoreboard - V4.9
           var isPrimetime = tv.includes('PRIME') || tv.includes('NBC') || tv.includes('ESPN') || tv.includes('ABC') || tv.includes('PEACOCK') || tv.includes('NETFLIX');
           var afcSouthIds = ['11', '30', '34'];
           var isAfcSouth = afcSouthIds.includes(game.homeTeam.id) || afcSouthIds.includes(game.awayTeam.id);
-          
-          var highlightClass = '';
-          if (isPrimetime) highlightClass += 'game-card-primetime ';
-          if (isAfcSouth) highlightClass += 'game-card-division';
+          var highlightClass = (isPrimetime ? 'game-card-primetime ' : '') + (isAfcSouth ? 'game-card-division' : '');
           
           return '<div class="game-card ' + highlightClass.trim() + '">' + 
                    '<div class="p-3 card-clickable" data-target-id="stats-' + game.id + '">' +
-                     buildGameHeaderHtml(game, isPrimetime, false) + 
-                     buildScoreRowHtml(game) + 
+                     buildGameHeaderHtml(game, isPrimetime) + 
+                     (game.state === 'pre' ? buildPreGameRowHtml(game) : buildLivePostGameRowHtml(game)) + 
                      buildStatCollapseHtml(game) + 
                    '</div>' +
                    buildTickerHtml(game) +
@@ -572,45 +575,76 @@ Project Context: TitanUp Scoreboard - V4.9
         }).join('') : '<div class="text-center py-4" style="color: #0C2340;">No conference games.</div>';
       }
 
-      function buildGameHeaderHtml(game, isPrimetime, isTitansGame) {
+      function buildGameHeaderHtml(game, isPrimetime) {
         var timeLabel = game.state === 'pre' ? formatKickoffTime(game.date) : (game.statusDetail || 'LIVE');
         var badgeClass = game.state === 'in' ? 'status-live' : (game.state === 'post' ? 'status-final' : 'status-scheduled');
         var primetimeBadge = isPrimetime ? '<span class="badge bg-danger text-white fw-bold" style="font-size: 0.65rem;">PRIMETIME</span>' : '';
         return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary text-white" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + primetimeBadge + '</div>';
       }
 
-      function buildScoreRowHtml(game) {
-        return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, game.state === 'pre') + buildTeamRowHtml(game.homeTeam, game.state === 'pre') + '</div>';
+      // V5.1 Replaces '-' Scores with Vegas Odds Block
+      function buildPreGameRowHtml(game) {
+        var teamCol = '<div class="d-flex flex-column gap-3" style="flex: 1;">' +
+                        buildTeamRowHtml(game.awayTeam, true) + 
+                        buildTeamRowHtml(game.homeTeam, true) + 
+                      '</div>';
+                      
+        var oddsCol = '<div class="d-flex flex-column justify-content-center text-end ps-3" style="border-left: 1px solid rgba(12,35,64,0.1); min-width: 65px;">' +
+                        '<div style="font-size: 0.6rem; color: #6c757d; font-weight: bold; letter-spacing: 0.5px;">SPREAD</div>' +
+                        '<div style="font-size: 0.85rem; font-weight: 900; color: #0C2340;">' + game.oddsDetails + '</div>' +
+                        '<div style="font-size: 0.6rem; color: #6c757d; font-weight: bold; letter-spacing: 0.5px; margin-top: 4px;">O/U</div>' +
+                        '<div style="font-size: 0.85rem; font-weight: 900; color: #0C2340;">' + game.oddsOU + '</div>' +
+                      '</div>';
+                      
+        return '<div class="d-flex justify-content-between">' + teamCol + oddsCol + '</div>';
+      }
+
+      function buildLivePostGameRowHtml(game) {
+        return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, false) + buildTeamRowHtml(game.homeTeam, false) + '</div>';
       }
 
       function buildTeamRowHtml(team, isScheduled) {
         var logoHtml = team.logo ? '<img src="' + team.logo + '" class="team-logo logo-clickable" data-team-id="' + team.id + '" data-team-name="' + team.name + '" data-team-color="' + team.color + '">' : '';
-        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
+        // If scheduled, completely drop the team-score container
+        var scoreHtml = isScheduled ? '' : '<div class="team-score">' + team.score + '</div>';
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div>' + scoreHtml + '</div>';
       }
 
-      function openScheduleDrawer(teamId, teamName, teamColor) {
-        var header = document.getElementById('scheduleDrawerHeader');
-        var label = document.getElementById('scheduleDrawerLabel');
-        var body = document.getElementById('scheduleDrawerBody');
+      // --- V5.1 Team Hub Drawer Logic (Schedule, Injuries, Depth) ---
+      
+      function openTeamHubDrawer(teamId, teamName, teamColor) {
+        state.currentHubTeamId = teamId;
+        
+        var header = document.getElementById('hubDrawerHeader');
+        var label = document.getElementById('hubDrawerLabel');
         
         header.style.backgroundColor = '#' + teamColor;
-        label.textContent = teamName.toUpperCase() + ' SCHEDULE';
+        label.textContent = teamName.toUpperCase() + ' HUB';
         
-        var drawerEl = document.getElementById('scheduleDrawer');
+        // Reset Tabs to Schedule Default
+        var schedTab = new bootstrap.Tab(document.getElementById('schedule-tab'));
+        schedTab.show();
+        
+        // Clear all panes to force re-fetch
+        document.getElementById('pane-schedule').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        document.getElementById('pane-injuries').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        document.getElementById('pane-depth').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+
+        var drawerEl = document.getElementById('hubDrawer');
         var bsOffcanvas = bootstrap.Offcanvas.getInstance(drawerEl);
         if (!bsOffcanvas) bsOffcanvas = new bootstrap.Offcanvas(drawerEl);
         bsOffcanvas.show();
         
-        body.innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
-        
+        fetchTeamSchedule(teamId);
+      }
+
+      function fetchTeamSchedule(teamId) {
+        var body = document.getElementById('pane-schedule');
         fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/' + teamId + '/schedule')
           .then(res => res.json())
           .then(data => {
               var events = data.events || [];
-              if (!events.length) {
-                  body.innerHTML = '<div class="text-center py-4 text-muted">Schedule not available.</div>';
-                  return;
-              }
+              if (!events.length) { body.innerHTML = '<div class="text-center py-4 text-muted">Schedule not available.</div>'; return; }
               
               var html = '<ul class="list-group list-group-flush">';
               events.forEach(function(ev) {
@@ -624,10 +658,8 @@ Project Context: TitanUp Scoreboard - V4.9
                   var oppData = oppTeam.team || {};
                   var oppName = oppData.shortDisplayName || oppData.displayName || 'TBA';
                   var oppLogo = oppData.logos && oppData.logos.length ? oppData.logos[0].href : '';
-                  
                   var isHome = myTeam.homeAway === 'home';
                   var vsAt = isHome ? 'vs' : '@';
-                  
                   var d = new Date(ev.date);
                   var dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
                   var gameState = (comp.status && comp.status.type) ? comp.status.type.state : 'pre';
@@ -635,7 +667,6 @@ Project Context: TitanUp Scoreboard - V4.9
                   var liveMatch = state.cachedData && state.cachedData.events ? state.cachedData.events.find(e => e.id === ev.id) : null;
                   var liveMyTeam = null;
                   var liveOppTeam = null;
-                  
                   if (liveMatch && liveMatch.competitions && liveMatch.competitions[0]) {
                       var liveCompetitors = liveMatch.competitions[0].competitors || [];
                       liveMyTeam = liveCompetitors.find(c => c.id === teamId);
@@ -666,7 +697,7 @@ Project Context: TitanUp Scoreboard - V4.9
                       statusStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                   }
                   
-                  html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1);">' +
+                  html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1); padding: 12px 16px;">' +
                             '<div class="d-flex align-items-center gap-2">' +
                                '<div style="width: 16px; font-size: 0.65rem; color: #6c757d; text-align: center; font-weight: bold;">' + vsAt + '</div>' +
                                (oppLogo ? '<img src="' + oppLogo + '" style="width: 24px; height: 24px; object-fit: contain;">' : '') +
@@ -680,24 +711,138 @@ Project Context: TitanUp Scoreboard - V4.9
               });
               html += '</ul>';
               body.innerHTML = html;
-          })
-          .catch(err => {
-              body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load schedule.</div>';
-          });
+          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load schedule.</div>'; });
       }
 
+      function fetchTeamInjuries(teamId) {
+        var body = document.getElementById('pane-injuries');
+        if (body.innerHTML.includes('spinner-border') === false) return; // Already loaded
+        
+        fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/' + teamId + '/roster')
+          .then(res => res.json())
+          .then(data => {
+             var athletes = data.athletes || [];
+             if (!athletes.length) { body.innerHTML = '<div class="text-center py-4 text-muted">No roster data found.</div>'; return; }
+             
+             var injuredPlayers = [];
+             athletes.forEach(function(group) {
+                if(group.items) {
+                   group.items.forEach(function(player) {
+                      if (player.injuries && player.injuries.length > 0) injuredPlayers.push(player);
+                      else if (player.status && player.status.type !== 'active') injuredPlayers.push(player);
+                   });
+                }
+             });
+
+             if (!injuredPlayers.length) {
+                body.innerHTML = '<div class="text-center py-5"><i class="bi bi-check-circle fs-1 text-success mb-2"></i><div class="fw-bold text-muted">No injuries reported.</div></div>';
+                return;
+             }
+
+             var html = '<ul class="list-group list-group-flush">';
+             injuredPlayers.forEach(function(player) {
+                var name = player.displayName || 'Unknown';
+                var pos = player.position && player.position.abbreviation ? player.position.abbreviation : '';
+                var status = "Inactive";
+                if (player.injuries && player.injuries.length > 0) {
+                    status = player.injuries[0].status || player.injuries[0].type || "Injured";
+                } else if (player.status) {
+                    status = player.status.name || "Inactive";
+                }
+                var badgeClass = status.toLowerCase().includes('out') ? 'bg-danger' : (status.toLowerCase().includes('questionable') ? 'bg-warning text-dark' : 'bg-secondary');
+                
+                html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1); padding: 12px 16px;">' +
+                           '<div><span class="fw-bold" style="color: #0C2340; font-size: 0.85rem;">' + name + '</span> <span style="font-size: 0.7rem; color: #6c757d;">' + pos + '</span></div>' +
+                           '<span class="badge ' + badgeClass + '" style="font-size: 0.65rem;">' + status.toUpperCase() + '</span>' +
+                        '</li>';
+             });
+             html += '</ul>';
+             body.innerHTML = html;
+          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load injuries.</div>'; });
+      }
+
+      function fetchTeamDepthChart(teamId) {
+        var body = document.getElementById('pane-depth');
+        if (body.innerHTML.includes('spinner-border') === false) return; 
+        
+        fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/' + teamId + '/depthchart')
+          .then(res => res.json())
+          .then(data => {
+             var items = data.items || [];
+             if (!items.length) { body.innerHTML = '<div class="text-center py-4 text-muted">Depth chart not available.</div>'; return; }
+             
+             var html = '<div class="p-3">';
+             items.forEach(function(unit) {
+                if (unit.name === 'Special Teams') return; // Hide special teams to save space
+                html += '<div class="fw-bold mb-2 text-uppercase" style="color: #C8102E; font-size: 0.75rem; border-bottom: 1px solid rgba(12,35,64,0.1); padding-bottom: 4px;">' + unit.name + '</div>';
+                
+                if (unit.positions) {
+                    unit.positions.forEach(function(pos) {
+                        var posName = pos.position && pos.position.abbreviation ? pos.position.abbreviation : 'POS';
+                        var starter = pos.athletes && pos.athletes.length > 0 ? pos.athletes[0].athlete.displayName : 'TBD';
+                        var backup = pos.athletes && pos.athletes.length > 1 ? pos.athletes[1].athlete.displayName : '';
+                        
+                        html += '<div class="d-flex align-items-center mb-2">' +
+                                  '<div class="fw-bold text-center" style="width: 35px; font-size: 0.75rem; color: #0C2340; background-color: rgba(12,35,64,0.05); padding: 2px; border-radius: 4px; margin-right: 10px;">' + posName + '</div>' +
+                                  '<div style="font-size: 0.8rem; color: #0C2340;"><strong>' + starter + '</strong>' + (backup ? ' <span style="opacity: 0.6; font-size: 0.7rem; margin-left: 6px;">' + backup + '</span>' : '') + '</div>' +
+                                '</div>';
+                    });
+                }
+                html += '<div class="mb-3"></div>';
+             });
+             html += '</div>';
+             body.innerHTML = html;
+          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load depth chart.</div>'; });
+      }
+
+      // --- V5.1 Season Leaders Ticker ---
+      
       function buildTickerHtml(game) {
-        if (game.state === 'pre') return ''; 
-        var pass = extractCategoryStringTicker(game.gameLeaders, 'passing');
-        var rush = extractCategoryStringTicker(game.gameLeaders, 'rushing');
-        var rec = extractCategoryStringTicker(game.gameLeaders, 'receiving');
-        if (!pass && !rush && !rec) return '';
-        var parts = [];
-        if (pass) parts.push('PASS: ' + pass);
-        if (rush) parts.push('RUSH: ' + rush);
-        if (rec) parts.push('REC: ' + rec);
-        var fullText = 'TOP OVERALL PERFORMERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
+        var fullText = '';
+        
+        if (game.state === 'pre') {
+           var awayPass = extractSeasonLeader(game.awayTeam.seasonLeaders, 'passing');
+           var homePass = extractSeasonLeader(game.homeTeam.seasonLeaders, 'passing');
+           var awayRush = extractSeasonLeader(game.awayTeam.seasonLeaders, 'rushing');
+           var homeRush = extractSeasonLeader(game.homeTeam.seasonLeaders, 'rushing');
+           
+           if (!awayPass && !homePass) return '';
+           
+           var parts = [];
+           if (awayPass) parts.push('AWAY PASS: ' + awayPass);
+           if (homePass) parts.push('HOME PASS: ' + homePass);
+           if (awayRush) parts.push('AWAY RUSH: ' + awayRush);
+           if (homeRush) parts.push('HOME RUSH: ' + homeRush);
+           
+           fullText = 'SEASON LEADERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
+        } else {
+           var pass = extractCategoryStringTicker(game.gameLeaders, 'passing');
+           var rush = extractCategoryStringTicker(game.gameLeaders, 'rushing');
+           var rec = extractCategoryStringTicker(game.gameLeaders, 'receiving');
+           if (!pass && !rush && !rec) return '';
+           
+           var parts = [];
+           if (pass) parts.push('PASS: ' + pass);
+           if (rush) parts.push('RUSH: ' + rush);
+           if (rec) parts.push('REC: ' + rec);
+           fullText = 'TOP OVERALL PERFORMERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
+        }
+
         return '<div class="ticker-wrap"><div class="ticker">' + fullText + '</div></div>';
+      }
+
+      function extractSeasonLeader(leadersArray, categoryName) {
+        if (!leadersArray || !leadersArray.length) return null;
+        var category = leadersArray.find(function(cat) { 
+          return cat.name && cat.name.toLowerCase().includes(categoryName.toLowerCase()); 
+        });
+        if (category && category.leaders && category.leaders.length > 0) {
+          var athlete = category.leaders[0].athlete || {};
+          var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
+          var statValue = category.leaders[0].displayValue || '0';
+          return athleteName + ' (' + statValue + ')';
+        }
+        return null;
       }
 
       function extractCategoryStringTicker(leadersArray, categoryName) {
