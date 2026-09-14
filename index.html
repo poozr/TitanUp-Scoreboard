@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Cross-Referenced Live Schedule Scores).
-Project Context: TitanUp Scoreboard - V4.7
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Schedule Cross-Reference, Manual Event Delegation, Share UI).
+Project Context: TitanUp Scoreboard - V4.8
 </script>
 
 <!DOCTYPE html>
@@ -205,6 +205,14 @@ Project Context: TitanUp Scoreboard - V4.7
           <option value="18">Week 18</option>
         </select>
       </div>
+
+      <!-- V4.8 Share App Button -->
+      <div class="mt-2 border-top border-secondary pt-4">
+        <button id="btnShareApp" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2" style="border-width: 2px;">
+          <i class="bi bi-share-fill"></i> Share TitanUp Scoreboard
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -224,7 +232,7 @@ Project Context: TitanUp Scoreboard - V4.7
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.7
+      TitanUp Scoreboard &bull; V4.8
     </div>
   </main>
 
@@ -261,7 +269,8 @@ Project Context: TitanUp Scoreboard - V4.7
         spoilerExpirationSelector: document.getElementById('spoilerExpirationSelector'),
         statusModeLabel: document.getElementById('statusModeLabel'),
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
-        btnRefresh: document.getElementById('btnRefresh')
+        btnRefresh: document.getElementById('btnRefresh'),
+        btnShareApp: document.getElementById('btnShareApp') // V4.8
       };
 
       function init() {
@@ -278,7 +287,6 @@ Project Context: TitanUp Scoreboard - V4.7
           state.selectedWeek = e.target.value;
           state.openAccordions = []; 
           fetchScoreboardData();
-          
           var offcanvasEl = document.getElementById('settingsDrawer');
           var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
           if(offcanvasInstance) offcanvasInstance.hide();
@@ -303,6 +311,22 @@ Project Context: TitanUp Scoreboard - V4.7
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
 
+        // V4.8 Share Application Logic
+        dom.btnShareApp.addEventListener('click', function() {
+          var url = window.location.href;
+          if (navigator.share) {
+            navigator.share({
+              title: 'TitanUp Scoreboard',
+              text: 'Check out the TitanUp NFL Scoreboard!',
+              url: url
+            }).catch(console.error);
+          } else {
+            navigator.clipboard.writeText(url).then(function() {
+              Swal.fire({ title: 'Copied!', text: 'App URL copied to clipboard.', icon: 'success', confirmButtonColor: '#C8102E', timer: 2500 });
+            });
+          }
+        });
+
         document.addEventListener('visibilitychange', function() {
           if (document.visibilityState === 'visible') {
             if (!state.isFetching) fetchScoreboardData();
@@ -312,21 +336,34 @@ Project Context: TitanUp Scoreboard - V4.7
           }
         });
 
+        // V4.8 Manual Event Delegation (Fixes overlapping Logo/Accordion clicks)
         document.addEventListener('click', function(e) {
           var logoTarget = e.target.closest('.logo-clickable');
           if (logoTarget) {
+            e.preventDefault();
             e.stopPropagation(); 
             var teamId = logoTarget.getAttribute('data-team-id');
             var teamName = logoTarget.getAttribute('data-team-name');
             var teamColor = logoTarget.getAttribute('data-team-color');
             openScheduleDrawer(teamId, teamName, teamColor);
+            return; // Halt execution so it doesn't trigger the card below
+          }
+
+          var cardTarget = e.target.closest('.card-clickable');
+          if (cardTarget) {
+            var targetId = cardTarget.getAttribute('data-target-id');
+            var targetEl = document.getElementById(targetId);
+            if (targetEl) {
+              var bsCollapse = bootstrap.Collapse.getInstance(targetEl);
+              if (!bsCollapse) bsCollapse = new bootstrap.Collapse(targetEl, { toggle: false });
+              bsCollapse.toggle();
+            }
           }
         });
 
         document.addEventListener('show.bs.collapse', function (e) {
           if (e.target.id && e.target.id.startsWith('stats-')) {
             var gameId = e.target.id.replace('stats-', '');
-            
             var openPanels = document.querySelectorAll('.collapse.show');
             openPanels.forEach(function(panel) {
               if (panel.id !== e.target.id && panel.id.startsWith('stats-')) {
@@ -334,7 +371,6 @@ Project Context: TitanUp Scoreboard - V4.7
                 if (bsCollapse) bsCollapse.hide();
               }
             });
-
             state.openAccordions = [gameId];
             fetchGameSummary(gameId);
           }
@@ -480,13 +516,14 @@ Project Context: TitanUp Scoreboard - V4.7
         var buttonText = isLive ? 'Reveal Live Score' : 'Reveal Final Score';
         var alertText = isLive ? 'Reveal live Titans score for this session?' : 'Reveal final Titans score for this session?';
 
+        // V4.8 Swap data-bs-toggle for data-target-id
         dom.titansSection.innerHTML = 
           '<div class="game-card game-card-titans">' +
             '<div class="titans-badge-strip">Titans Matchup</div>' +
             '<div class="position-relative ' + (needsShield ? 'spoiler-container' : '') + '">' +
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2" style="color: #0C2340;"></i><div class="fw-bold mb-1" style="color: #0C2340;">Spoiler Shield Active</div><button id="btnRevealTitans" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> ' + buttonText + '</button></div>' : '') +
               '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + 
-                '<div class="p-3 card-clickable" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '">' +
+                '<div class="p-3 card-clickable" data-target-id="stats-' + game.id + '">' +
                   buildGameHeaderHtml(game, false, true) + 
                   buildScoreRowHtml(game) + 
                   buildStatCollapseHtml(game) + 
@@ -523,8 +560,9 @@ Project Context: TitanUp Scoreboard - V4.7
           if (isPrimetime) highlightClass += 'game-card-primetime ';
           if (isAfcSouth) highlightClass += 'game-card-division';
           
+          // V4.8 Swap data-bs-toggle for data-target-id
           return '<div class="game-card ' + highlightClass.trim() + '">' + 
-                   '<div class="p-3 card-clickable" data-bs-toggle="collapse" data-bs-target="#stats-' + game.id + '">' +
+                   '<div class="p-3 card-clickable" data-target-id="stats-' + game.id + '">' +
                      buildGameHeaderHtml(game, isPrimetime, false) + 
                      buildScoreRowHtml(game) + 
                      buildStatCollapseHtml(game) + 
@@ -550,8 +588,6 @@ Project Context: TitanUp Scoreboard - V4.7
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.7 Schedule Drawer Live Cross-Reference Fix ---
-      
       function openScheduleDrawer(teamId, teamName, teamColor) {
         var header = document.getElementById('scheduleDrawerHeader');
         var label = document.getElementById('scheduleDrawerLabel');
@@ -596,7 +632,6 @@ Project Context: TitanUp Scoreboard - V4.7
                   var dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
                   var gameState = (comp.status && comp.status.type) ? comp.status.type.state : 'pre';
                   
-                  // V4.7 Cross-reference Live Scoreboard for accurate Live Game scores
                   var liveMatch = state.cachedData && state.cachedData.events ? state.cachedData.events.find(e => e.id === ev.id) : null;
                   var liveMyTeam = null;
                   var liveOppTeam = null;
