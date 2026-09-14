@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore Stats, Team Box Fallback Arrays, Defense, Strict Accordion, Schedule Fixes).
-Project Context: TitanUp Scoreboard - V4.6
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Cross-Referenced Live Schedule Scores).
+Project Context: TitanUp Scoreboard - V4.7
 </script>
 
 <!DOCTYPE html>
@@ -97,7 +97,6 @@ Project Context: TitanUp Scoreboard - V4.6
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V4.6 Clickable Area & Deep Stat Styles */
     .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .stat-line { font-size: 0.72rem; line-height: 1.35; color: #495057; margin-bottom: 8px; }
     .stat-secondary { opacity: 0.65; font-weight: normal; }
@@ -225,7 +224,7 @@ Project Context: TitanUp Scoreboard - V4.6
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.6
+      TitanUp Scoreboard &bull; V4.7
     </div>
   </main>
 
@@ -327,6 +326,7 @@ Project Context: TitanUp Scoreboard - V4.6
         document.addEventListener('show.bs.collapse', function (e) {
           if (e.target.id && e.target.id.startsWith('stats-')) {
             var gameId = e.target.id.replace('stats-', '');
+            
             var openPanels = document.querySelectorAll('.collapse.show');
             openPanels.forEach(function(panel) {
               if (panel.id !== e.target.id && panel.id.startsWith('stats-')) {
@@ -334,6 +334,7 @@ Project Context: TitanUp Scoreboard - V4.6
                 if (bsCollapse) bsCollapse.hide();
               }
             });
+
             state.openAccordions = [gameId];
             fetchGameSummary(gameId);
           }
@@ -549,7 +550,7 @@ Project Context: TitanUp Scoreboard - V4.6
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.6 Schedule Drawer Fixes ---
+      // --- V4.7 Schedule Drawer Live Cross-Reference Fix ---
       
       function openScheduleDrawer(teamId, teamName, teamColor) {
         var header = document.getElementById('scheduleDrawerHeader');
@@ -593,24 +594,38 @@ Project Context: TitanUp Scoreboard - V4.6
                   
                   var d = new Date(ev.date);
                   var dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
+                  var gameState = (comp.status && comp.status.type) ? comp.status.type.state : 'pre';
                   
-                  var statusStr = '';
-                  var state = (comp.status && comp.status.type) ? comp.status.type.state : 'pre';
+                  // V4.7 Cross-reference Live Scoreboard for accurate Live Game scores
+                  var liveMatch = state.cachedData && state.cachedData.events ? state.cachedData.events.find(e => e.id === ev.id) : null;
+                  var liveMyTeam = null;
+                  var liveOppTeam = null;
                   
-                  // V4.6 Safe extraction for nested score objects
-                  var getScore = function(teamObj) {
+                  if (liveMatch && liveMatch.competitions && liveMatch.competitions[0]) {
+                      var liveCompetitors = liveMatch.competitions[0].competitors || [];
+                      liveMyTeam = liveCompetitors.find(c => c.id === teamId);
+                      liveOppTeam = liveCompetitors.find(c => c.id !== teamId);
+                      gameState = (liveMatch.status && liveMatch.status.type) ? liveMatch.status.type.state : gameState;
+                  }
+
+                  var getScore = function(teamObj, liveTeamObj) {
+                      if (liveTeamObj && liveTeamObj.score != null) {
+                          if (typeof liveTeamObj.score === 'object') return parseInt(liveTeamObj.score.value || 0);
+                          return parseInt(liveTeamObj.score || 0);
+                      }
                       if (!teamObj || teamObj.score == null) return 0;
                       if (typeof teamObj.score === 'object') return parseInt(teamObj.score.value || 0);
                       return parseInt(teamObj.score || 0);
                   };
                   
-                  var myScore = getScore(myTeam);
-                  var oppScore = getScore(oppTeam);
+                  var myScore = getScore(myTeam, liveMyTeam);
+                  var oppScore = getScore(oppTeam, liveOppTeam);
                   
-                  if (state === 'post') {
+                  var statusStr = '';
+                  if (gameState === 'post') {
                       var wl = myScore > oppScore ? '<span class="text-success fw-bold">W</span>' : (myScore < oppScore ? '<span class="text-danger fw-bold">L</span>' : '<span class="text-warning fw-bold">T</span>');
                       statusStr = wl + ' ' + myScore + '-' + oppScore;
-                  } else if (state === 'in') {
+                  } else if (gameState === 'in') {
                       statusStr = '<span class="text-danger fw-bold">LIVE</span> ' + myScore + '-' + oppScore;
                   } else {
                       statusStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
