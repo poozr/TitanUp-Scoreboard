@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Pre-Game Odds, Team Hub, Native PWA Install Flow).
-Project Context: TitanUp Scoreboard - V5.6
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Pre-Game Odds, Team Hub, Native PWA Install Flow, 2026 Dates & Dynamic Week Header).
+Project Context: TitanUp Scoreboard - V5.7
 </script>
 
 <!DOCTYPE html>
@@ -197,22 +197,32 @@ Project Context: TitanUp Scoreboard - V5.6
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
           <option value="current" selected>Current Week</option>
-          <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option>
-          <option value="5">Week 5</option><option value="6">Week 6</option><option value="7">Week 7</option><option value="8">Week 8</option>
-          <option value="9">Week 9</option><option value="10">Week 10</option><option value="11">Week 11</option><option value="12">Week 12</option>
-          <option value="13">Week 13</option><option value="14">Week 14</option><option value="15">Week 15</option><option value="16">Week 16</option>
-          <option value="17">Week 17</option><option value="18">Week 18</option>
+          <option value="1">Week 1 (Sep 13)</option>
+          <option value="2">Week 2 (Sep 20)</option>
+          <option value="3">Week 3 (Sep 27)</option>
+          <option value="4">Week 4 (Oct 4)</option>
+          <option value="5">Week 5 (Oct 11)</option>
+          <option value="6">Week 6 (Oct 18)</option>
+          <option value="7">Week 7 (Oct 25)</option>
+          <option value="8">Week 8 (Nov 1)</option>
+          <option value="9">Week 9 (Nov 8)</option>
+          <option value="10">Week 10 (Nov 15)</option>
+          <option value="11">Week 11 (Nov 22)</option>
+          <option value="12">Week 12 (Nov 29)</option>
+          <option value="13">Week 13 (Dec 6)</option>
+          <option value="14">Week 14 (Dec 13)</option>
+          <option value="15">Week 15 (Dec 20)</option>
+          <option value="16">Week 16 (Dec 27)</option>
+          <option value="17">Week 17 (Jan 3)</option>
+          <option value="18">Week 18 (Jan 10)</option>
         </select>
       </div>
       <div class="mt-2 border-top border-secondary pt-4 d-flex flex-column gap-3">
-        
-        <!-- V5.6 Native Install Button (Hidden by default) -->
         <div id="installContainer" style="display: none;">
           <button id="btnInstallApp" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" style="border-width: 2px; background-color: #4994ce; border-color: #4994ce;">
             <i class="bi bi-download"></i> Install TitanUp App
           </button>
         </div>
-
         <button id="btnShareApp" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2" style="border-width: 2px;">
           <i class="bi bi-share-fill"></i> Share App Link
         </button>
@@ -236,7 +246,7 @@ Project Context: TitanUp Scoreboard - V5.6
       </div>
     </section>
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V5.6
+      TitanUp Scoreboard &bull; V5.7
     </div>
   </main>
 
@@ -264,7 +274,6 @@ Project Context: TitanUp Scoreboard - V5.6
         cachedData: null,
         openAccordions: [],
         currentHubTeamId: null,
-        // V5.6 PWA State Tracking
         deferredPrompt: null,
         isStandalone: window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
       };
@@ -279,8 +288,8 @@ Project Context: TitanUp Scoreboard - V5.6
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
         btnRefresh: document.getElementById('btnRefresh'),
         btnShareApp: document.getElementById('btnShareApp'),
-        btnInstallApp: document.getElementById('btnInstallApp'), // V5.6
-        installContainer: document.getElementById('installContainer') // V5.6
+        btnInstallApp: document.getElementById('btnInstallApp'),
+        installContainer: document.getElementById('installContainer') 
       };
 
       function init() {
@@ -331,7 +340,6 @@ Project Context: TitanUp Scoreboard - V5.6
           }
         });
 
-        // V5.6 Intercept App Install Prompt
         window.addEventListener('beforeinstallprompt', function(e) {
           e.preventDefault();
           state.deferredPrompt = e;
@@ -340,7 +348,6 @@ Project Context: TitanUp Scoreboard - V5.6
           }
         });
 
-        // V5.6 Handle App Install Click
         dom.btnInstallApp.addEventListener('click', function() {
           var offcanvasEl = document.getElementById('settingsDrawer');
           var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
@@ -357,7 +364,6 @@ Project Context: TitanUp Scoreboard - V5.6
           }
         });
 
-        // V5.6 Auto-hide on successful install
         window.addEventListener('appinstalled', function() {
           dom.installContainer.style.display = 'none';
           state.isStandalone = true;
@@ -459,7 +465,7 @@ Project Context: TitanUp Scoreboard - V5.6
       }
 
       function processAndRender(data) {
-        updateHeaderMetadata();
+        updateHeaderMetadata(data);
         var events = data.events || [];
         if (!events.length) {
           dom.titansSection.innerHTML = '';
@@ -532,14 +538,21 @@ Project Context: TitanUp Scoreboard - V5.6
         };
       }
 
-      function updateHeaderMetadata() {
+      function updateHeaderMetadata(data) {
         var now = new Date();
         dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         var today = now.getDay();
-        if (today === 0) dom.statusModeLabel.textContent = 'Sunday NFL Slate';
-        else if (today === 1) dom.statusModeLabel.textContent = 'Monday Night Football';
-        else if (today === 4) dom.statusModeLabel.textContent = 'Thursday Night Football';
-        else dom.statusModeLabel.textContent = 'Upcoming Weekend Slate';
+        
+        var weekNum = (data && data.week && data.week.number) ? data.week.number : '';
+        var weekStr = weekNum ? ' (Week ' + weekNum + ')' : '';
+        
+        var prefix = '';
+        if (today === 0) prefix = 'Sunday NFL Slate';
+        else if (today === 1) prefix = 'Monday Night Football';
+        else if (today === 4) prefix = 'Thursday Night Football';
+        else prefix = 'Upcoming Weekend Slate';
+        
+        dom.statusModeLabel.textContent = prefix + weekStr;
       }
 
       function renderTitansGame(game) {
