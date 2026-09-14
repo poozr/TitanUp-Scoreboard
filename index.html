@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore Stats, Team Box Fallback Arrays, Defense, & Strict Accordion).
-Project Context: TitanUp Scoreboard - V4.5
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Dynamic Team Schedules, Strict Accordion).
+Project Context: TitanUp Scoreboard - V5.0
 </script>
 
 <!DOCTYPE html>
@@ -16,19 +16,19 @@ Project Context: TitanUp Scoreboard - V4.5
 
   <title>TitanUp Scoreboard</title>
 
-  <!-- Desktop Browser Favicons -->
+  <script type="text/plain">// Desktop Browser Favicons</script>
   <link rel="shortcut icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
   <link rel="icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
   
-  <!-- Mobile Launcher Icon -->
+  <script type="text/plain">// Mobile Launcher Icon</script>
   <link rel="apple-touch-icon" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
 
-  <!-- Google Fonts: Archivo -->
+  <script type="text/plain">// Google Fonts: Archivo</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&display=swap" rel="stylesheet">
 
-  <!-- Inline Web App Manifest & Service Worker -->
+  <script type="text/plain">// Inline Web App Manifest & Service Worker</script>
   <script>
     (function () {
       var iconUrl = "https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png";
@@ -56,7 +56,7 @@ Project Context: TitanUp Scoreboard - V4.5
     })();
   </script>
 
-  <!-- Bootstrap 5 CSS & Icons -->
+  <script type="text/plain">// Bootstrap 5 CSS & Icons</script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -65,7 +65,6 @@ Project Context: TitanUp Scoreboard - V4.5
     body { background-color: #4994ce; color: #0C2340; font-family: 'Archivo', sans-serif; }
     .navbar-titans { background-color: #0C2340; border-bottom: 3px solid #C8102E; }
     
-    /* Responsive Header Scaling */
     .nav-logo { width: 40px; height: 40px; }
     .nav-title { font-weight: 900; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; color: #ffffff; }
     
@@ -97,7 +96,6 @@ Project Context: TitanUp Scoreboard - V4.5
     .btn-reveal { background-color: #C8102E; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
     .btn-reveal:hover { background-color: #a00d25; }
     
-    /* V4.5 Clickable Area & Deep Stat Styles */
     .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
     .stat-line { font-size: 0.72rem; line-height: 1.35; color: #495057; margin-bottom: 8px; }
     .stat-secondary { opacity: 0.65; font-weight: normal; }
@@ -116,6 +114,9 @@ Project Context: TitanUp Scoreboard - V4.5
     .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
     .form-switch .form-check-input:checked { background-color: #4994ce; border-color: #4994ce; }
     .offcanvas { background-color: #0C2340 !important; border-left: 1px solid rgba(255,255,255,0.1); }
+    
+    .logo-clickable { cursor: pointer; transition: transform 0.2s; position: relative; z-index: 20; }
+    .logo-clickable:hover { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
   </style>
 </head>
 <body>
@@ -130,12 +131,27 @@ Project Context: TitanUp Scoreboard - V4.5
         </div>
       </div>
 
+      <script type="text/plain">// Settings Drawer Trigger</script>
       <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
         <i class="bi bi-sliders fs-4"></i>
       </button>
     </div>
   </header>
 
+  <script type="text/plain">// V5.0 Team Schedule Offcanvas Drawer (Left)</script>
+  <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="scheduleDrawer" aria-labelledby="scheduleDrawerLabel" style="max-width: 320px; border-right: none;">
+    <div class="offcanvas-header border-bottom border-secondary" id="scheduleDrawerHeader" style="background-color: #0C2340; transition: background-color 0.3s;">
+      <h5 class="offcanvas-title fw-bold text-uppercase" id="scheduleDrawerLabel" style="letter-spacing: 1px; text-shadow: 0px 1px 3px rgba(0,0,0,0.6);">TEAM SCHEDULE</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0" id="scheduleDrawerBody" style="background-color: #f8f9fa; color: #0C2340;">
+      <div class="text-center py-5">
+         <div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/plain">// Global Settings Offcanvas Drawer (Right)</script>
   <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
     <div class="offcanvas-header border-bottom border-secondary">
       <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="letter-spacing: 1px;">SETTINGS</h5>
@@ -208,7 +224,7 @@ Project Context: TitanUp Scoreboard - V4.5
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.5
+      TitanUp Scoreboard &bull; V5.0
     </div>
   </main>
 
@@ -296,10 +312,21 @@ Project Context: TitanUp Scoreboard - V4.5
           }
         });
 
+        // V5.0 Logo Event Delegation (Intercepts tap to open schedule drawer)
+        document.addEventListener('click', function(e) {
+          var logoTarget = e.target.closest('.logo-clickable');
+          if (logoTarget) {
+            e.stopPropagation(); 
+            var teamId = logoTarget.getAttribute('data-team-id');
+            var teamName = logoTarget.getAttribute('data-team-name');
+            var teamColor = logoTarget.getAttribute('data-team-color');
+            openScheduleDrawer(teamId, teamName, teamColor);
+          }
+        });
+
         document.addEventListener('show.bs.collapse', function (e) {
           if (e.target.id && e.target.id.startsWith('stats-')) {
             var gameId = e.target.id.replace('stats-', '');
-            
             var openPanels = document.querySelectorAll('.collapse.show');
             openPanels.forEach(function(panel) {
               if (panel.id !== e.target.id && panel.id.startsWith('stats-')) {
@@ -307,7 +334,6 @@ Project Context: TitanUp Scoreboard - V4.5
                 if (bsCollapse) bsCollapse.hide();
               }
             });
-
             state.openAccordions = [gameId];
             fetchGameSummary(gameId);
           }
@@ -376,7 +402,6 @@ Project Context: TitanUp Scoreboard - V4.5
             var bIsFinal = b.state === 'post';
             if (aIsFinal && !bIsFinal) return 1;
             if (!aIsFinal && bIsFinal) return -1;
-            
             var aIsLive = a.state === 'in';
             var bIsLive = b.state === 'in';
             if (aIsLive && !bIsLive) return -1;
@@ -418,7 +443,8 @@ Project Context: TitanUp Scoreboard - V4.5
           name: team.shortDisplayName || team.displayName || 'TBD',
           logo: team.logo || '',
           score: competitor.score || '0',
-          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : ''
+          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : '',
+          color: team.color || '0C2340' // V5.0 Extract official brand hex code
         };
       }
 
@@ -426,7 +452,6 @@ Project Context: TitanUp Scoreboard - V4.5
         var now = new Date();
         dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         var today = now.getDay();
-        
         if (today === 0) dom.statusModeLabel.textContent = 'Sunday NFL Slate';
         else if (today === 1) dom.statusModeLabel.textContent = 'Monday Night Football';
         else if (today === 4) dom.statusModeLabel.textContent = 'Thursday Night Football';
@@ -442,7 +467,6 @@ Project Context: TitanUp Scoreboard - V4.5
         var now = new Date();
         var gameDate = new Date(game.date);
         var expirationDate = new Date(gameDate);
-        
         expirationDate.setHours(0, 0, 0, 0); 
         expirationDate.setDate(expirationDate.getDate() + 1); 
         expirationDate.setHours(state.spoilerExpirationHour); 
@@ -450,7 +474,6 @@ Project Context: TitanUp Scoreboard - V4.5
         var isSpoilerWindow = now < expirationDate;
         var isLive = game.state === 'in';
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
-        
         var needsShield = (isLive || isRecentFinal) && !state.titansScoreUnlocked;
         
         var buttonText = isLive ? 'Reveal Live Score' : 'Reveal Final Score';
@@ -481,11 +504,7 @@ Project Context: TitanUp Scoreboard - V4.5
               if (res.isConfirmed) {
                 state.titansScoreUnlocked = true;
                 sessionStorage.setItem('titan_score_unlocked', 'true');
-                if (state.cachedData) {
-                  processAndRender(state.cachedData);
-                } else {
-                  fetchScoreboardData();
-                }
+                if (state.cachedData) processAndRender(state.cachedData);
               }
             });
           });
@@ -496,7 +515,6 @@ Project Context: TitanUp Scoreboard - V4.5
         dom.nflGamesList.innerHTML = games.length ? games.map(function(game) {
           var tv = (game.tvStation || '').toUpperCase();
           var isPrimetime = tv.includes('PRIME') || tv.includes('NBC') || tv.includes('ESPN') || tv.includes('ABC') || tv.includes('PEACOCK') || tv.includes('NETFLIX');
-          
           var afcSouthIds = ['11', '30', '34'];
           var isAfcSouth = afcSouthIds.includes(game.homeTeam.id) || afcSouthIds.includes(game.awayTeam.id);
           
@@ -527,26 +545,101 @@ Project Context: TitanUp Scoreboard - V4.5
       }
 
       function buildTeamRowHtml(team, isScheduled) {
-        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
+        // V5.0 Add logo-clickable class and data attributes
+        var logoHtml = team.logo ? '<img src="' + team.logo + '" class="team-logo logo-clickable" data-team-id="' + team.id + '" data-team-name="' + team.name + '" data-team-color="' + team.color + '">' : '';
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name">' + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // --- V4.5 Deep Stats with Boxscore & Team Stats Array Fallbacks ---
+      // --- V5.0 Schedule Drawer Implementation ---
       
+      function openScheduleDrawer(teamId, teamName, teamColor) {
+        var header = document.getElementById('scheduleDrawerHeader');
+        var label = document.getElementById('scheduleDrawerLabel');
+        var body = document.getElementById('scheduleDrawerBody');
+        
+        header.style.backgroundColor = '#' + teamColor;
+        label.textContent = teamName.toUpperCase() + ' SCHEDULE';
+        
+        var drawerEl = document.getElementById('scheduleDrawer');
+        var bsOffcanvas = bootstrap.Offcanvas.getInstance(drawerEl);
+        if (!bsOffcanvas) bsOffcanvas = new bootstrap.Offcanvas(drawerEl);
+        bsOffcanvas.show();
+        
+        body.innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        
+        fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams/' + teamId + '/schedule')
+          .then(res => res.json())
+          .then(data => {
+              var events = data.events || [];
+              if (!events.length) {
+                  body.innerHTML = '<div class="text-center py-4 text-muted">Schedule not available.</div>';
+                  return;
+              }
+              
+              var html = '<ul class="list-group list-group-flush">';
+              events.forEach(function(ev) {
+                  var comp = (ev.competitions && ev.competitions[0]) ? ev.competitions[0] : null;
+                  if (!comp) return;
+                  
+                  var competitors = comp.competitors || [];
+                  var myTeam = competitors.find(c => c.id === teamId) || {};
+                  var oppTeam = competitors.find(c => c.id !== teamId) || {};
+                  
+                  var oppData = oppTeam.team || {};
+                  var oppName = oppData.shortDisplayName || oppData.displayName || 'TBA';
+                  var oppLogo = oppData.logos && oppData.logos.length ? oppData.logos[0].href : '';
+                  
+                  var isHome = myTeam.homeAway === 'home';
+                  var vsAt = isHome ? 'vs' : '@';
+                  
+                  var d = new Date(ev.date);
+                  var dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
+                  
+                  var statusStr = '';
+                  var state = (comp.status && comp.status.type) ? comp.status.type.state : 'pre';
+                  
+                  if (state === 'post') {
+                      var myScore = parseInt(myTeam.score || 0);
+                      var oppScore = parseInt(oppTeam.score || 0);
+                      var wl = myScore > oppScore ? '<span class="text-success fw-bold">W</span>' : (myScore < oppScore ? '<span class="text-danger fw-bold">L</span>' : '<span class="text-warning fw-bold">T</span>');
+                      statusStr = wl + ' ' + myScore + '-' + oppScore;
+                  } else if (state === 'in') {
+                      statusStr = '<span class="text-danger fw-bold">LIVE</span> ' + myTeam.score + '-' + oppTeam.score;
+                  } else {
+                      statusStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                  }
+                  
+                  html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1);">' +
+                            '<div class="d-flex align-items-center gap-2">' +
+                               '<div style="width: 16px; font-size: 0.65rem; color: #6c757d; text-align: center; font-weight: bold;">' + vsAt + '</div>' +
+                               (oppLogo ? '<img src="' + oppLogo + '" style="width: 24px; height: 24px; object-fit: contain;">' : '') +
+                               '<div class="fw-bold" style="font-size: 0.85rem; color: #0C2340;">' + oppName + '</div>' +
+                            '</div>' +
+                            '<div class="text-end">' +
+                               '<div style="font-size: 0.85rem; color: #0C2340; font-weight: bold;">' + statusStr + '</div>' +
+                               '<div style="font-size: 0.65rem; color: #6c757d; text-transform: uppercase;">' + dateStr + '</div>' +
+                            '</div>' +
+                         '</li>';
+              });
+              html += '</ul>';
+              body.innerHTML = html;
+          })
+          .catch(err => {
+              body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load schedule.</div>';
+          });
+      }
+
       function buildTickerHtml(game) {
         if (game.state === 'pre') return ''; 
-
         var pass = extractCategoryStringTicker(game.gameLeaders, 'passing');
         var rush = extractCategoryStringTicker(game.gameLeaders, 'rushing');
         var rec = extractCategoryStringTicker(game.gameLeaders, 'receiving');
-        
         if (!pass && !rush && !rec) return '';
-
         var parts = [];
         if (pass) parts.push('PASS: ' + pass);
         if (rush) parts.push('RUSH: ' + rush);
         if (rec) parts.push('REC: ' + rec);
         var fullText = 'TOP OVERALL PERFORMERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
-
         return '<div class="ticker-wrap"><div class="ticker">' + fullText + '</div></div>';
       }
 
@@ -568,7 +661,6 @@ Project Context: TitanUp Scoreboard - V4.5
         if (game.state === 'pre') return ''; 
         var isOpen = state.openAccordions.includes(game.id);
         var showClass = isOpen ? 'show' : '';
-        
         return '<div class="collapse mt-3 pt-3 border-top ' + showClass + '" id="stats-' + game.id + '" style="border-color: rgba(12,35,64,0.1) !important;">' +
                  '<div id="summary-content-' + game.id + '">' +
                    (isOpen ? '<div class="text-center py-2"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>' : '') +
@@ -642,15 +734,12 @@ Project Context: TitanUp Scoreboard - V4.5
       function extractCategoryFromBoxscore(boxscoreTeam, categoryName, limit) {
         if (limit === undefined) limit = 3;
         if (!boxscoreTeam || !boxscoreTeam.statistics) return null;
-        
         var category = boxscoreTeam.statistics.find(function(cat) { 
           return cat.name && cat.name.toLowerCase() === categoryName.toLowerCase(); 
         });
-        
         if (category && category.athletes && category.athletes.length > 0) {
           var players = [];
           var loopLimit = Math.min(category.athletes.length, limit);
-          
           for (var i = 0; i < loopLimit; i++) {
             var athleteData = category.athletes[i];
             var athleteName = athleteData.athlete.shortName || athleteData.athlete.lastName || 'Unknown';
@@ -669,19 +758,15 @@ Project Context: TitanUp Scoreboard - V4.5
             } else {
                 statString = stats.join(', '); 
             }
-            
             if (statString.includes(', 0 TD')) statString = statString.replace(', 0 TD', '');
-            
             if (i === 0) players.push('<strong>' + athleteName + '</strong> <span style="opacity: 0.85;">(' + statString + ')</span>');
             else players.push('<span class="stat-secondary">' + athleteName + ' (' + statString + ')</span>');
           }
-          
           return players.join('<br>');
         }
         return null;
       }
       
-      // V4.5 Bulletproof fallback search array for NFL/CFB schema shifts
       function getTeamStatValue(statsArray, possibleNames) {
         var stat = null;
         for (var i = 0; i < possibleNames.length; i++) {
@@ -693,12 +778,10 @@ Project Context: TitanUp Scoreboard - V4.5
 
       function buildTeamStatsHtml(statsArray) {
         if (!statsArray || statsArray.length === 0) return '';
-        
         var yds = getTeamStatValue(statsArray, ['totalYards', 'netYards', 'totalOffensiveYards']);
         var to = getTeamStatValue(statsArray, ['turnovers']);
         var pen = getTeamStatValue(statsArray, ['totalPenaltiesYards', 'penalties', 'penaltiesYards']); 
         var top = getTeamStatValue(statsArray, ['possessionTime']);
-        
         return '<div class="mt-2 pt-2 border-top" style="border-color: rgba(12,35,64,0.1) !important;">' +
                  '<div class="fw-bold mb-2" style="font-size: 0.65rem; color: #C8102E; letter-spacing: 0.5px;">TEAM STATS</div>' +
                  '<div class="stat-line mb-1"><span class="fw-bold" style="color: #0C2340;">YDS:</span> ' + yds + '</div>' +
