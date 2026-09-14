@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Schedule Cross-Reference, Manual Event Delegation, Share UI).
-Project Context: TitanUp Scoreboard - V4.8
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Strict Accordion, Schedule Cross-Reference, Manual Event Delegation, Share UI, API Attribution).
+Project Context: TitanUp Scoreboard - V4.9
 </script>
 
 <!DOCTYPE html>
@@ -16,19 +16,19 @@ Project Context: TitanUp Scoreboard - V4.8
 
   <title>TitanUp Scoreboard</title>
 
-  <!-- Desktop Browser Favicons -->
+  <script type="text/plain">// Desktop Browser Favicons</script>
   <link rel="shortcut icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
   <link rel="icon" type="image/png" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
   
-  <!-- Mobile Launcher Icon -->
+  <script type="text/plain">// Mobile Launcher Icon</script>
   <link rel="apple-touch-icon" href="https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png">
 
-  <!-- Google Fonts: Archivo -->
+  <script type="text/plain">// Google Fonts: Archivo</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&display=swap" rel="stylesheet">
 
-  <!-- Inline Web App Manifest & Service Worker -->
+  <script type="text/plain">// Inline Web App Manifest & Service Worker</script>
   <script>
     (function () {
       var iconUrl = "https://poozr.github.io/TitanUp-Scoreboard/TitanUp.png";
@@ -56,7 +56,7 @@ Project Context: TitanUp Scoreboard - V4.8
     })();
   </script>
 
-  <!-- Bootstrap 5 CSS & Icons -->
+  <script type="text/plain">// Bootstrap 5 CSS & Icons</script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -138,7 +138,7 @@ Project Context: TitanUp Scoreboard - V4.8
     </div>
   </header>
 
-  <!-- Team Schedule Offcanvas Drawer (Left) -->
+  <script type="text/plain">// Team Schedule Offcanvas Drawer (Left)</script>
   <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="scheduleDrawer" aria-labelledby="scheduleDrawerLabel" style="max-width: 320px; border-right: none;">
     <div class="offcanvas-header border-bottom border-secondary" id="scheduleDrawerHeader" style="background-color: #0C2340; transition: background-color 0.3s;">
       <h5 class="offcanvas-title fw-bold text-uppercase" id="scheduleDrawerLabel" style="letter-spacing: 1px; text-shadow: 0px 1px 3px rgba(0,0,0,0.6);">TEAM SCHEDULE</h5>
@@ -151,7 +151,7 @@ Project Context: TitanUp Scoreboard - V4.8
     </div>
   </div>
 
-  <!-- Global Settings Offcanvas Drawer (Right) -->
+  <script type="text/plain">// Global Settings Offcanvas Drawer (Right)</script>
   <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
     <div class="offcanvas-header border-bottom border-secondary">
       <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="letter-spacing: 1px;">SETTINGS</h5>
@@ -206,11 +206,15 @@ Project Context: TitanUp Scoreboard - V4.8
         </select>
       </div>
 
-      <!-- V4.8 Share App Button -->
       <div class="mt-2 border-top border-secondary pt-4">
         <button id="btnShareApp" class="btn btn-outline-light w-100 d-flex align-items-center justify-content-center gap-2" style="border-width: 2px;">
           <i class="bi bi-share-fill"></i> Share TitanUp Scoreboard
         </button>
+      </div>
+
+      <script type="text/plain">// V4.9 API Attribution</script>
+      <div class="text-center mt-3 pt-3 border-top border-secondary">
+        <small style="color: rgba(255,255,255,0.4); font-size: 0.6rem; letter-spacing: 0.5px;">Factual scoreboard data provided courtesy of ESPN.</small>
       </div>
 
     </div>
@@ -232,7 +236,7 @@ Project Context: TitanUp Scoreboard - V4.8
     </section>
 
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V4.8
+      TitanUp Scoreboard &bull; V4.9
     </div>
   </main>
 
@@ -270,7 +274,7 @@ Project Context: TitanUp Scoreboard - V4.8
         statusModeLabel: document.getElementById('statusModeLabel'),
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
         btnRefresh: document.getElementById('btnRefresh'),
-        btnShareApp: document.getElementById('btnShareApp') // V4.8
+        btnShareApp: document.getElementById('btnShareApp') 
       };
 
       function init() {
@@ -311,7 +315,6 @@ Project Context: TitanUp Scoreboard - V4.8
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
 
-        // V4.8 Share Application Logic
         dom.btnShareApp.addEventListener('click', function() {
           var url = window.location.href;
           if (navigator.share) {
@@ -336,7 +339,6 @@ Project Context: TitanUp Scoreboard - V4.8
           }
         });
 
-        // V4.8 Manual Event Delegation (Fixes overlapping Logo/Accordion clicks)
         document.addEventListener('click', function(e) {
           var logoTarget = e.target.closest('.logo-clickable');
           if (logoTarget) {
@@ -346,7 +348,7 @@ Project Context: TitanUp Scoreboard - V4.8
             var teamName = logoTarget.getAttribute('data-team-name');
             var teamColor = logoTarget.getAttribute('data-team-color');
             openScheduleDrawer(teamId, teamName, teamColor);
-            return; // Halt execution so it doesn't trigger the card below
+            return; 
           }
 
           var cardTarget = e.target.closest('.card-clickable');
@@ -516,7 +518,6 @@ Project Context: TitanUp Scoreboard - V4.8
         var buttonText = isLive ? 'Reveal Live Score' : 'Reveal Final Score';
         var alertText = isLive ? 'Reveal live Titans score for this session?' : 'Reveal final Titans score for this session?';
 
-        // V4.8 Swap data-bs-toggle for data-target-id
         dom.titansSection.innerHTML = 
           '<div class="game-card game-card-titans">' +
             '<div class="titans-badge-strip">Titans Matchup</div>' +
@@ -560,7 +561,6 @@ Project Context: TitanUp Scoreboard - V4.8
           if (isPrimetime) highlightClass += 'game-card-primetime ';
           if (isAfcSouth) highlightClass += 'game-card-division';
           
-          // V4.8 Swap data-bs-toggle for data-target-id
           return '<div class="game-card ' + highlightClass.trim() + '">' + 
                    '<div class="p-3 card-clickable" data-target-id="stats-' + game.id + '">' +
                      buildGameHeaderHtml(game, isPrimetime, false) + 
