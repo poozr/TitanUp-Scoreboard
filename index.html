@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
-Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Team Hub, PWA Install, 2026 Dates, Dynamic Header, Forced Tuesday Rollover).
-Project Context: TitanUp Scoreboard - V5.8
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for NFL Scoreboard (Titans theme - Deep Boxscore, Team Hub, PWA Install, 2026 Dates, Temporal Header Awareness).
+Project Context: TitanUp Scoreboard - V5.9
 </script>
 
 <!DOCTYPE html>
@@ -246,7 +246,7 @@ Project Context: TitanUp Scoreboard - V5.8
       </div>
     </section>
     <div class="text-center mt-4 fw-bold" style="color: rgba(12,35,64,0.6); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      TitanUp Scoreboard &bull; V5.8
+      TitanUp Scoreboard &bull; V5.9
     </div>
   </main>
 
@@ -292,15 +292,11 @@ Project Context: TitanUp Scoreboard - V5.8
         installContainer: document.getElementById('installContainer') 
       };
 
-      // V5.8 Exact Math Custom Rollover
       function getCalculatedCurrentWeek() {
         var now = new Date();
-        // Sets Week 1 threshold to Tuesday, September 8, 2026 at 6:00 AM local
         var seasonStart = new Date(2026, 8, 8, 6, 0, 0); 
         var diffMs = now.getTime() - seasonStart.getTime();
-        // 1000 * 60 * 60 * 24 * 7 = 604800000 (ms in a week)
         var weekNum = Math.floor(diffMs / 604800000) + 1;
-        
         if (weekNum < 1) return 1;
         if (weekNum > 18) return 18;
         return weekNum;
@@ -460,7 +456,6 @@ Project Context: TitanUp Scoreboard - V5.8
       function fetchScoreboardData(callback) {
         state.isFetching = true;
         
-        // V5.8 Override ESPN's slow rollover with our exact Tuesday Morning math
         var weekToFetch = state.selectedWeek;
         if (weekToFetch === 'current') {
             weekToFetch = getCalculatedCurrentWeek();
@@ -558,20 +553,28 @@ Project Context: TitanUp Scoreboard - V5.8
         };
       }
 
+      // V5.9 Temporal Awareness Update
       function updateHeaderMetadata(data) {
         var now = new Date();
         dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         var today = now.getDay();
         
-        // V5.8 Grabs current week directly from API to dynamically attach to header
         var weekNum = (data && data.week && data.week.number) ? data.week.number : '';
         var weekStr = weekNum ? ' (Week ' + weekNum + ')' : '';
         
         var prefix = '';
-        if (today === 0) prefix = 'Sunday NFL Slate';
-        else if (today === 1) prefix = 'Monday Night Football';
-        else if (today === 4) prefix = 'Thursday Night Football';
-        else prefix = 'Upcoming Weekend Slate';
+        var currentCalculatedWeek = getCalculatedCurrentWeek();
+        
+        if (weekNum && weekNum < currentCalculatedWeek) {
+            prefix = 'Past NFL Slate';
+        } else if (weekNum && weekNum > currentCalculatedWeek) {
+            prefix = 'Future NFL Slate';
+        } else {
+            if (today === 0) prefix = 'Sunday NFL Slate';
+            else if (today === 1) prefix = 'Monday Night Football';
+            else if (today === 4) prefix = 'Thursday Night Football';
+            else prefix = 'Upcoming Weekend Slate';
+        }
         
         dom.statusModeLabel.textContent = prefix + weekStr;
       }
